@@ -1,2 +1,2 @@
 # pulau-rs
-UnionFind library for bare metal environment
+Allocation-free UnionFind library for bare metal environments
