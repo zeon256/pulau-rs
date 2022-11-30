@@ -102,15 +102,14 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 /// 
 /// # Example
 /// ```rust
+/// use pulau_rs::{UnionFind, QuickFind, QuickUnion};
 /// fn make_uf_quickfind() {
 ///     // construct with quickfind algorithm with fixed size 10
 ///     let mut uf = UnionFind::<QuickFind, u32, 10>::new();
 /// }
 /// 
-/// ```
-/// ```rust
 /// fn make_uf_quickunion() {
-///     // construct with quickunion algorithm with fixed size 10
+///     // construct with weighted quickunion with path compression algorithm with fixed size 10
 ///     let mut uf = UnionFind::<QuickUnion, u32, 10, 10>::new();
 /// }
 /// ```
