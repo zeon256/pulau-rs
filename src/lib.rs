@@ -90,6 +90,30 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 
 pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>;
 
+/// UnionFind data structure
+/// 
+/// This data structure stores a collection of disjoint (non-overlapping) sets.
+/// 
+/// UnionFind is parameterized by the following
+/// - `A` - Algorithm  
+/// - `T` - Any unsigned integral types, i.e., [u8], [u16], [u32], [u64], [usize]
+/// - `N` - Size of internal representative buffer 
+/// - `M` - Size of internal rank buffer, this defaults to 0, but it is required if you are using algorithms other than [QuickFind]
+/// 
+/// # Example
+/// ```rust
+/// fn make_uf_quickfind() {
+///     // construct with quickfind algorithm with fixed size 10
+///     let mut uf = UnionFind::<QuickFind, u32, 10>::new();
+/// }
+/// 
+/// ```
+/// ```rust
+/// fn make_uf_quickunion() {
+///     // construct with quickunion algorithm with fixed size 10
+///     let mut uf = UnionFind::<QuickUnion, u32, 10, 10>::new();
+/// }
+/// ```
 pub struct UnionFind<A, T, const N: usize, const M: usize = 0>
 where
     T: IndexType,
