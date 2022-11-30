@@ -65,34 +65,63 @@
     rust_2018_idioms
 )]
 
-pub struct UnionFind<A, T, const N: usize, R = usize, const M: usize = N>
+pub mod quickfind;
+pub mod quickunion;
+
+pub use crate::quickfind::QuickFind;
+pub use crate::quickunion::QuickUnion;
+
+pub trait IndexType: Copy + Eq {
+    fn usize(self) -> usize;
+}
+
+macro_rules! generate_index_type_impl{
+    ($($num_type:ident), *) => {
+        $(
+            impl IndexType for $num_type {
+                fn usize(self) -> usize {
+                    self as usize
+                }
+            }
+        )*
+    };
+}
+
+generate_index_type_impl!(u8, u16, u32, u64, usize);
+
+pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>;
+
+pub struct UnionFind<A, T, const N: usize, const M: usize = 0>
 where
-    T: Copy,
-    R: Copy,
-    A: Union + Find + Connected,
+    T: IndexType,
+    A: Union<T, N, M> + Find<T, N> + Connected<T, N>,
 {
     pub representative: A::RepresentativeContainer<T, N>,
-    pub rank: A::RankContainer<R, M>,
+    pub rank: A::RankContainer<T, M>,
     algorithm: A,
 }
 
-impl<A, T, R, const N: usize, const M: usize> UnionFind<A, T, N, R, M>
+impl<A, T, const N: usize, const M: usize> UnionFind<A, T, N, M>
 where
-    T: Copy,
-    R: Copy,
-    A: Union + Find + Connected,
+    T: IndexType,
+    A: Union<T, N, M> + Find<T, N> + Connected<T, N> + Default,
+    Self: Default,
 {
     pub fn new() -> Self {
-        unimplemented!()
+        Self::default()
     }
 
-    pub fn connected(&self) -> bool {
-        self.algorithm.connected()
+    pub fn connected(&self, a: T, b: T) -> bool {
+        self.algorithm.connected(&self.representative, a, b)
     }
 
-    pub fn find(&self) -> T {
-        // self.algorithm.find()
-        unimplemented!()
+    pub fn find(&self, a: T) -> T {
+        self.algorithm.find(&self.representative, a)
+    }
+
+    pub fn union(&mut self, a: T, b: T) {
+        self.algorithm
+            .union(&mut self.representative, &mut self.rank, a, b)
     }
 }
 
@@ -101,66 +130,34 @@ pub trait WithContainer {
     type RepresentativeContainer<R: Copy, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
-pub trait Union
+pub trait Union<T, const N: usize, const M: usize>
 where
     Self: WithContainer,
+    T: Copy,
 {
-    fn union(&self) {}
+    fn union(
+        &mut self,
+        representative: &mut Self::RepresentativeContainer<T, N>,
+        rank: &mut Self::RankContainer<T, M>,
+        a: T,
+        b: T,
+    );
 }
 
-pub trait Find
+pub trait Find<T, const N: usize>
 where
     Self: WithContainer,
+    T: IndexType,
 {
-    fn find(&self) {}
+    fn find(&self, representative: &Self::RepresentativeContainer<T, N>, a: T) -> T;
 }
 
-pub trait Connected
+pub trait Connected<T, const N: usize>
 where
     Self: WithContainer,
+    T: IndexType,
 {
-    fn connected(&self) -> bool;
-}
-
-pub struct QuickFind;
-pub struct QuickUnion<const WEIGHTED: bool = true, const COMPRESS_PATH: bool = true>;
-
-impl WithContainer for QuickFind {
-    type RankContainer<T: Copy, const N: usize> = [T; 0];
-    type RepresentativeContainer<R: Copy, const N: usize> = [R; N];
-}
-
-impl Connected for QuickFind {
-    fn connected(&self) -> bool {
-        todo!()
-    }
-}
-
-impl Union for QuickFind {
-    fn union(&self) {}
-}
-
-impl Find for QuickFind {
-    fn find(&self) {}
-}
-
-impl WithContainer for QuickUnion {
-    type RankContainer<T: Copy, const N: usize> = [T; N];
-    type RepresentativeContainer<R: Copy, const N: usize> = [R; N];
-}
-
-impl Connected for QuickUnion {
-    fn connected(&self) -> bool {
-        todo!()
-    }
-}
-
-impl Union for QuickUnion {
-    fn union(&self) {}
-}
-
-impl Find for QuickUnion {
-    fn find(&self) {}
+    fn connected(&self, representative: &Self::RepresentativeContainer<T, N>, a: T, b: T) -> bool;
 }
 
 #[cfg(test)]
@@ -187,18 +184,23 @@ mod tests {
     #[test]
     fn test_wqupc_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32>>(),
+            size_of::<UnionFind::<QuickUnion, usize, 32, 32>>(),
             size_of::<[usize; 32]>() * 2
         );
 
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32, u32>>(),
-            size_of::<[usize; 32]>() + size_of::<[u32; 32]>()
+            size_of::<UnionFind::<QuickUnion, usize, 32, 32>>(),
+            size_of::<[usize; 32]>() + size_of::<[usize; 32]>()
         );
     }
 
     #[test]
     fn test_qf() {
-        // let uf_qf = UnionFind::<QuickFind, u32, 32>::new();
+        let mut uf = UnionFind::<QuickFind, u32, 32>::new();
+        uf.union(4, 3);
+        uf.union(3, 8);
+        uf.union(6, 5);
+        uf.union(9, 4);
+        assert_eq!(uf.connected(3, 9), true);
     }
 }
