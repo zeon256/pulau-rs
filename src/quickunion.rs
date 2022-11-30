@@ -4,8 +4,8 @@ use crate::{Connected, Find, Union, UnionFind, WithContainer, IndexType};
 pub struct QuickUnion<const WEIGHTED: bool = true, const COMPRESS_PATH: bool = true>;
 
 impl WithContainer for QuickUnion {
-    type RankContainer<T: Copy, const N: usize> = [T; N];
-    type RepresentativeContainer<R: Copy, const N: usize> = [R; N];
+    type RankContainer<T: IndexType, const N: usize> = [T; N];
+    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
 }
 
 macro_rules! generate_default_ctor_quickunion {
@@ -64,3 +64,5 @@ where
 }
 
 generate_default_ctor_quickunion!(u8, u16, u32, u64, usize);
+
+

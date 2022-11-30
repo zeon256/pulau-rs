@@ -1,6 +1,5 @@
 #![no_std]
 #![cfg_attr(not(debug_assertions), deny(warnings))]
-#![forbid(unsafe_code)]
 #![warn(
     clippy::all,
     clippy::await_holding_lock,
@@ -126,14 +125,14 @@ where
 }
 
 pub trait WithContainer {
-    type RankContainer<T: Copy, const N: usize>: AsRef<[T]> + AsMut<[T]>;
-    type RepresentativeContainer<R: Copy, const N: usize>: AsRef<[R]> + AsMut<[R]>;
+    type RankContainer<T: IndexType, const N: usize>: AsRef<[T]> + AsMut<[T]>;
+    type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
 pub trait Union<T, const N: usize, const M: usize>
 where
     Self: WithContainer,
-    T: Copy,
+    T: IndexType,
 {
     fn union(
         &mut self,
@@ -192,15 +191,5 @@ mod tests {
             size_of::<UnionFind::<QuickUnion, usize, 32, 32>>(),
             size_of::<[usize; 32]>() + size_of::<[usize; 32]>()
         );
-    }
-
-    #[test]
-    fn test_qf() {
-        let mut uf = UnionFind::<QuickFind, u32, 32>::new();
-        uf.union(4, 3);
-        uf.union(3, 8);
-        uf.union(6, 5);
-        uf.union(9, 4);
-        assert_eq!(uf.connected(3, 9), true);
     }
 }

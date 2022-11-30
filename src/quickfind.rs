@@ -1,7 +1,12 @@
-use crate::{Connected, Find, Union, UnionFind, WithContainer, IndexType};
+use crate::{Connected, Find, IndexType, Union, UnionFind, WithContainer};
 
 #[derive(Debug, Default)]
 pub struct QuickFind;
+
+impl WithContainer for QuickFind {
+    type RankContainer<T: IndexType, const N: usize> = [T; 0];
+    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
+}
 
 macro_rules! generate_default_ctor_quickfind {
     ($($num_type:ident), *) => {
@@ -24,11 +29,6 @@ macro_rules! generate_default_ctor_quickfind {
         }
         )*
     };
-}
-
-impl WithContainer for QuickFind {
-    type RankContainer<T: Copy, const N: usize> = [T; 0];
-    type RepresentativeContainer<R: Copy, const N: usize> = [R; N];
 }
 
 impl<T, const N: usize> Connected<T, N> for QuickFind
@@ -66,8 +66,24 @@ where
     T: IndexType,
 {
     fn find(&self, representative: &Self::RepresentativeContainer<T, N>, a: T) -> T {
-        representative[a.usize()]
+        assert!(a.usize() < N);
+        *unsafe { representative.get_unchecked(a.usize()) }
     }
 }
 
 generate_default_ctor_quickfind!(u8, u16, u32, u64, usize);
+
+#[cfg(test)]
+mod tests {
+    use crate::{QuickFind, UnionFind};
+
+    #[test]
+    fn test_qf() {
+        let mut uf = UnionFind::<QuickFind, u32, 10>::new();
+        uf.union(4, 3);
+        uf.union(3, 8);
+        uf.union(6, 5);
+        uf.union(9, 4);
+        assert_eq!(uf.connected(3, 9), true);
+    }
+}
