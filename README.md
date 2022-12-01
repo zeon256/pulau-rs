@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="250" height="250" src="./logo.png">
+  <img src="./logo.png">
 </p>
 <p align="center">
   <a href="https://github.com/zeon256/pulau-rs/blob/main/LICENSE">
@@ -13,12 +13,6 @@
   </a>
   <a href="https://github.com/zeon256/pulau-rs/actions">
     <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/Test%20Rust%20project"/>
-  </a>
-  <a href="https://crates.io/crates/lta">
-    <img src="https://img.shields.io/crates/v/lta"/>
-  </a>
-  <a href="https://github.com/BudiNverse/lta-rs">
-    <img src="https://img.shields.io/crates/d/lta"/>
   </a>
 </p>
 
