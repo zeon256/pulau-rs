@@ -85,6 +85,6 @@ mod tests {
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
         uf.union_sets(9, 4);
-        assert_eq!(uf.connected(3, 9), true);
+        assert!(uf.connected(3, 9));
     }
 }

@@ -267,19 +267,41 @@ generate_default_ctor_quickunion_unweighted!(u8, u16, u32, u64, usize);
 
 #[cfg(test)]
 mod tests {
+    use crate::{QuickUnion, UnionFind};
+
+    use super::{BySize, Unweighted};
 
     #[test]
     fn test_qu() {
-
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::new();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        assert!(uf.connected(3, 9));
     }
 
     #[test]
-    fn test_wqupc_sz() {
-
+    fn test_wqu_sz() {
+        let mut uf = UnionFind::<QuickUnion<BySize>, u32, 10>::new();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        uf.union_sets(2, 1);
+        uf.union_sets(5, 0);
+        assert_eq!([6, 2, 2, 4, 4, 6, 6, 7, 4, 4], uf.representative);
     }
 
     #[test]
     fn test_wqupc_rank() {
-
+        let mut uf = UnionFind::<QuickUnion, u8, 10>::new();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        uf.union_sets(2, 1);
+        uf.union_sets(5, 0);
+        assert_eq!([6, 2, 2, 4, 4, 6, 6, 7, 4, 4], uf.representative);
     }
 }
