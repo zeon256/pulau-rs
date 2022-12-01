@@ -115,12 +115,12 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 /// use pulau_rs::{UnionFind, QuickFind, QuickUnion};
 /// fn make_uf_quickfind() {
 ///     // construct with quickfind algorithm with fixed size 10
-///     let mut uf = UnionFind::<QuickFind, u32, 10>::new();
+///     let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
 /// }
 /// 
 /// fn make_uf_quickunion() {
 ///     // construct with weighted quickunion with path compression algorithm with fixed size 10
-///     let mut uf = UnionFind::<QuickUnion, u32, 10, 10>::new();
+///     let mut uf = UnionFind::<QuickUnion, u32, 10>::new();
 /// }
 /// ```
 /// 
@@ -130,7 +130,7 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 /// If it's weighted then, size of [`UnionFind`] is `2 * T * N`
 /// 
 /// Else it will be `T * N`
-pub struct UnionFind<A, T, const N: usize, const M: usize = 0>
+pub struct UnionFind<A, T, const N: usize, const M: usize = N>
 where
     T: IndexType,
     A: Union<T, N, M> + Find<T, N> + Connected<T, N>,
@@ -223,15 +223,15 @@ mod tests {
     #[test]
     fn test_qf_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u32, 32>>(),
+            size_of::<UnionFind::<QuickFind, u32, 32, 0>>(),
             size_of::<[u32; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u8, 32>>(),
+            size_of::<UnionFind::<QuickFind, u8, 32, 0>>(),
             size_of::<[u8; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, usize, 32>>(),
+            size_of::<UnionFind::<QuickFind, usize, 32, 0>>(),
             size_of::<[usize; 32]>()
         );
     }
@@ -239,12 +239,12 @@ mod tests {
     #[test]
     fn test_wqupc_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32, 32>>(),
+            size_of::<UnionFind::<QuickUnion, usize, 32>>(),
             size_of::<[usize; 32]>() * 2
         );
 
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32, 32>>(),
+            size_of::<UnionFind::<QuickUnion, usize, 32>>(),
             size_of::<[usize; 32]>() + size_of::<[usize; 32]>()
         );
     }

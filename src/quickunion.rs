@@ -264,3 +264,22 @@ where
 generate_default_ctor_quickunion!(u8, u16, u32, u64, usize);
 generate_default_ctor_quickunion_by_size!(u8, u16, u32, u64, usize);
 generate_default_ctor_quickunion_unweighted!(u8, u16, u32, u64, usize);
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_qu() {
+
+    }
+
+    #[test]
+    fn test_wqupc_sz() {
+
+    }
+
+    #[test]
+    fn test_wqupc_rank() {
+
+    }
+}

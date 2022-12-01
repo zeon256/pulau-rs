@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn test_qf() {
-        let mut uf = UnionFind::<QuickFind, u32, 10>::new();
+        let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
