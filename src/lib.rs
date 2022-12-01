@@ -1,5 +1,6 @@
 #![no_std]
 #![cfg_attr(not(debug_assertions), deny(warnings))]
+#![forbid(unsafe_code)]
 #![warn(
     clippy::all,
     clippy::await_holding_lock,
@@ -64,14 +65,19 @@
     rust_2018_idioms
 )]
 
+#![doc = include_str!("../libdoc.md")]
+
 pub mod quickfind;
 pub mod quickunion;
+
+use core::ops::AddAssign;
 
 pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
 
-pub trait IndexType: Copy + Eq {
+pub trait IndexType: Copy + Eq + PartialOrd + AddAssign<Self> {
     fn usize(self) -> usize;
+    fn one() -> Self;
 }
 
 macro_rules! generate_index_type_impl{
@@ -80,6 +86,10 @@ macro_rules! generate_index_type_impl{
             impl IndexType for $num_type {
                 fn usize(self) -> usize {
                     self as usize
+                }
+
+                fn one() -> Self {
+                    1
                 }
             }
         )*
@@ -90,15 +100,15 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 
 pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>;
 
-/// UnionFind data structure
+/// [`UnionFind`] data structure
 /// 
 /// This data structure stores a collection of disjoint (non-overlapping) sets.
 /// 
-/// UnionFind is parameterized by the following
-/// - `A` - Algorithm  
-/// - `T` - Any unsigned integral types, i.e., [u8], [u16], [u32], [u64], [usize]
+/// [`UnionFind`] is parameterized by the following
+/// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
+/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`]
 /// - `N` - Size of internal representative buffer 
-/// - `M` - Size of internal rank buffer, this defaults to 0, but it is required if you are using algorithms other than [QuickFind]
+/// - `M` - Size of internal heuristic buffer, this defaults to sz 0, but it is required if you are using algorithms other than [`QuickFind`]
 /// 
 /// # Example
 /// ```rust
@@ -113,13 +123,20 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 ///     let mut uf = UnionFind::<QuickUnion, u32, 10, 10>::new();
 /// }
 /// ```
+/// 
+/// # Size Guarantees
+/// Size of [`UnionFind`] depends on whether the algorithm you have chosen is weighted
+/// 
+/// If it's weighted then, size of [`UnionFind`] is `2 * T * N`
+/// 
+/// Else it will be `T * N`
 pub struct UnionFind<A, T, const N: usize, const M: usize = 0>
 where
     T: IndexType,
     A: Union<T, N, M> + Find<T, N> + Connected<T, N>,
 {
-    pub representative: A::RepresentativeContainer<T, N>,
-    pub rank: A::RankContainer<T, M>,
+    representative: A::RepresentativeContainer<T, N>,
+    heuristic: A::HeuristicContainer<T, M>,
     algorithm: A,
 }
 
@@ -129,26 +146,42 @@ where
     A: Union<T, N, M> + Find<T, N> + Connected<T, N> + Default,
     Self: Default,
 {
+    /// Construct a new [`UnionFind`] structure based on the type parameters provided
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn connected(&self, a: T, b: T) -> bool {
-        self.algorithm.connected(&self.representative, a, b)
+    /// Checks whether 2 nodes are connected to each other
+    pub fn connected(&mut self, a: T, b: T) -> bool {
+        self.algorithm.connected(&mut self.representative, a, b)
     }
 
-    pub fn find(&self, a: T) -> T {
-        self.algorithm.find(&self.representative, a)
+    /// Finds a node
+    pub fn find(&mut self, a: T) -> T {
+        self.algorithm.find(&mut self.representative, a)
     }
 
-    pub fn union(&mut self, a: T, b: T) {
+    /// Unions 2 node. If those 2 nodes are already part of the same component
+    /// then this does nothing
+    pub fn union_sets(&mut self, a: T, b: T) {
         self.algorithm
-            .union(&mut self.representative, &mut self.rank, a, b)
+            .union_sets(&mut self.representative, &mut self.heuristic, a, b)
     }
+
+    /// Gets the representative slice
+    pub fn representative(&self) -> &A::RepresentativeContainer<T, N> {
+        &self.representative
+    }
+
+    /// Gets the heuristic slice
+    pub fn heuristic(&self) -> &A::HeuristicContainer<T, M> {
+        &self.heuristic
+    }
+
 }
 
 pub trait WithContainer {
-    type RankContainer<T: IndexType, const N: usize>: AsRef<[T]> + AsMut<[T]>;
+    type HeuristicContainer<T: IndexType, const N: usize>: AsRef<[T]> + AsMut<[T]>;
     type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
@@ -157,10 +190,10 @@ where
     Self: WithContainer,
     T: IndexType,
 {
-    fn union(
+    fn union_sets(
         &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        rank: &mut Self::RankContainer<T, M>,
+        heuristic: &mut Self::HeuristicContainer<T, M>,
         a: T,
         b: T,
     );
@@ -171,7 +204,7 @@ where
     Self: WithContainer,
     T: IndexType,
 {
-    fn find(&self, representative: &Self::RepresentativeContainer<T, N>, a: T) -> T;
+    fn find(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, a: T) -> T;
 }
 
 pub trait Connected<T, const N: usize>
@@ -179,7 +212,7 @@ where
     Self: WithContainer,
     T: IndexType,
 {
-    fn connected(&self, representative: &Self::RepresentativeContainer<T, N>, a: T, b: T) -> bool;
+    fn connected(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, a: T, b: T) -> bool;
 }
 
 #[cfg(test)]

@@ -24,4 +24,3 @@ The library provides the following algorithms that is used with [UnionFind].
 - Searching for connected components in an image
 - Finding minimum spanning tree using Kruskal
 
-Docs: https://zeon256.github.io/pulau-rs/pulau_rs/index.html
