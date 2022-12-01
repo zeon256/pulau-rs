@@ -108,7 +108,7 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 /// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
 /// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`]
 /// - `N` - Size of internal representative buffer 
-/// - `M` - Size of internal heuristic buffer, this defaults to sz 0, but it is required if you are using algorithms other than [`QuickFind`]
+/// - `M` - Size of internal heuristic buffer, this defaults to sz `N`, but it must be 0 if you are using [`QuickFind`]
 /// 
 /// # Example
 /// ```rust
