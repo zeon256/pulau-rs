@@ -6,19 +6,19 @@ Allocation-free UnionFind library for bare metal environments
 </p>
 <p align="center">
   <a href="https://github.com/zeon256/pulau-rs/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/zeon256/pulau-rs?style=flat-square"/>
+    <img src="https://img.shields.io/github/license/zeon256/pulau-rs?style=for-the-badge"/>
   </a>
   <a href="https://docs.rs/pulau_rs">
-    <img src="https://img.shields.io/badge/docs-docs.rs-blue?style=flat-square&logo=Docs.rs"/>
+    <img src="https://img.shields.io/badge/docs-docs.rs-blue?style=for-the-badge&logo=Docs.rs"/>
   </a>
   <a href="https://zeon256.github.io/pulau-rs/pulau_rs/">
-    <img src="https://img.shields.io/badge/docs-main--branch-red?style=flat-square&logo=Docs.rs"/>
+    <img src="https://img.shields.io/badge/docs-main--branch-red?style=for-the-badge&logo=Docs.rs"/>
   </a>
   <a href="https://github.com/zeon256/pulau-rs/actions">
-    <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/rust.yml?style=flat-square"/>
+    <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/rust.yml?style=for-the-badge"/>
   </a>
   <a href="">
-    <img src="https://img.shields.io/badge/Rust-1.65-green?style=flat-square&logo=rust"/>
+    <img src="https://img.shields.io/badge/Rust-1.65-green?style=for-the-badge&logo=rust"/>
   </a>
 </p>
 
