@@ -2,6 +2,9 @@
   <img src="./logo.png">
 </p>
 <p align="center">
+Allocation-free UnionFind library for bare metal environments
+</p>
+<p align="center">
   <a href="https://github.com/zeon256/pulau-rs/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/zeon256/pulau-rs?style=flat-square"/>
   </a>
@@ -15,9 +18,6 @@
     <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/rust.yml?style=flat-square"/>
   </a>
 </p>
-
-# pulau-rs
-Allocation-free UnionFind library for bare metal environments
 
 The library provides the following algorithms that is used with `UnionFind`.
 - QuickFind
