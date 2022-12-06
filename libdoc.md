@@ -24,3 +24,22 @@ The library provides the following algorithms that is used with [UnionFind].
 - Searching for connected components in an image
 - Finding minimum spanning tree using Kruskal
 
+## Example Usage
+```rust
+use pulau_rs::{UnionFind, QuickFind, QuickUnion, BySize};
+fn make_uf_quickfind() {
+    // construct with quickfind algorithm with fixed size 10
+    let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
+}
+
+fn make_uf_quickunion() {
+    // construct weighted quickunion with path compression algorithm with fixed size 10
+    let mut uf = UnionFind::<QuickUnion, u32, 10>::new();
+    // construct weighted quickunion with path compression using size heuristics and fixed size 10
+    let mut uf_with_sz = UnionFind::<QuickUnion<BySize>, u8, 10>::new();
+    uf.union_sets(1,2);
+    uf.union_sets(2,3);
+    uf.union_sets(2,3);
+    assert!(uf.connected(1, 3));
+}
+```

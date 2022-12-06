@@ -19,7 +19,8 @@ pub struct Unweighted;
 /// This algorithm is parameterized by the following
 /// - `H` - Heuristic Type. Available types: [`ByRank`], [`BySize`], [`Unweighted`]
 /// - `COMPRESS_PATH` - boolean value, enables path compression during find operation
-/// By default, both are true
+///
+/// By default, [`ByRank`] heuristic is used and path compression is enabled
 #[derive(Debug, Default)]
 pub struct QuickUnion<H = ByRank, const COMPRESS_PATH: bool = true> {
     heuristic: PhantomData<H>,
@@ -51,7 +52,7 @@ macro_rules! generate_representative {
 }
 
 /// Macro to generate default constructor for weighted quickunion (by rank) with path compression
-macro_rules! generate_default_ctor_quickunion {
+macro_rules! generate_default_ctor {
     ($($num_type:ident), *) => {
         $(
         impl<const N: usize> Default for UnionFind<QuickUnion, $num_type, N, N>
@@ -64,14 +65,7 @@ macro_rules! generate_default_ctor_quickunion {
                 }
             }
         }
-        )*
-    };
-}
 
-/// Macro to generate default constructor for weighted quickunion (by size) with path compression
-macro_rules! generate_default_ctor_quickunion_by_size {
-    ($($num_type:ident), *) => {
-        $(
         impl<const N: usize> Default for UnionFind<QuickUnion<BySize>, $num_type, N, N>
         {
             fn default() -> Self {
@@ -82,15 +76,8 @@ macro_rules! generate_default_ctor_quickunion_by_size {
                 }
             }
         }
-        )*
-    };
-}
 
-/// Macro to generate default constructor for unweighted quickunion
-macro_rules! generate_default_ctor_quickunion_unweighted {
-    ($($num_type:ident), *) => {
-        $(
-        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, false>, $num_type, N, N>
+        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, false>, $num_type, N, 0>
         {
             fn default() -> Self {
                 Self {
@@ -100,15 +87,8 @@ macro_rules! generate_default_ctor_quickunion_unweighted {
                 }
             }
         }
-        )*
-    };
-}
 
-/// Macro to generate default constructor for unweighted quickunion with pc
-macro_rules! generate_default_ctor_quickunion_unweighted_pc {
-    ($($num_type:ident), *) => {
-        $(
-        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, true>, $num_type, N, N>
+        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, true>, $num_type, N, 0>
         {
             fn default() -> Self {
                 Self {
@@ -215,7 +195,7 @@ where
 impl<A, T, const N: usize> Find<T, N> for QuickUnion<A, false>
 where
     T: IndexType,
-    Self: WithContainer
+    Self: WithContainer,
 {
     fn find(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, mut a: T) -> T {
         while a != representative[a.usize()] {
@@ -240,10 +220,7 @@ where
     }
 }
 
-generate_default_ctor_quickunion!(u8, u16, u32, u64, usize);
-generate_default_ctor_quickunion_by_size!(u8, u16, u32, u64, usize);
-generate_default_ctor_quickunion_unweighted!(u8, u16, u32, u64, usize);
-generate_default_ctor_quickunion_unweighted_pc!(u8, u16, u32, u64, usize);
+generate_default_ctor!(u8, u16, u32, u64, usize);
 
 #[cfg(test)]
 mod tests {
@@ -253,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_qu() {
-        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10, 0>::default();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
@@ -263,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_qupc() {
-        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
+        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10, 0>::default();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);

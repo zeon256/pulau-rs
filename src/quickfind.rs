@@ -36,7 +36,12 @@ impl<T, const N: usize> Connected<T, N> for QuickFind
 where
     T: IndexType,
 {
-    fn connected(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, a: T, b: T) -> bool {
+    fn connected(
+        &mut self,
+        representative: &mut Self::RepresentativeContainer<T, N>,
+        a: T,
+        b: T,
+    ) -> bool {
         self.find(representative, a) == self.find(representative, b)
     }
 }

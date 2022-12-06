@@ -73,6 +73,7 @@ use core::ops::{AddAssign, Index, IndexMut};
 
 pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
+pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
 pub trait IndexType: Copy + Eq + PartialOrd + AddAssign<Self> {
     fn usize(self) -> usize;
@@ -99,8 +100,6 @@ macro_rules! generate_index_type_impl{
 }
 
 generate_index_type_impl!(u8, u16, u32, u64, usize);
-
-pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>;
 
 /// [`UnionFind`] data structure
 ///
