@@ -84,10 +84,13 @@ macro_rules! generate_index_type_impl{
     ($($num_type:ident), *) => {
         $(
             impl IndexType for $num_type {
+                
+                #[inline(always)]
                 fn usize(self) -> usize {
                     self as usize
                 }
 
+                #[inline(always)]
                 fn one() -> Self {
                     1
                 }

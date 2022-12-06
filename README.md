@@ -3,16 +3,16 @@
 </p>
 <p align="center">
   <a href="https://github.com/zeon256/pulau-rs/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/lta-rs/lta-models"/>
+    <img src="https://img.shields.io/github/license/lta-rs/lta-models?style=flat-square"/>
   </a>
   <a href="https://docs.rs/lta">
-    <img src="https://img.shields.io/badge/docs-docs.rs-blue"/>
+    <img src="https://img.shields.io/badge/docs-docs.rs-blue?style=flat-square&logo=Docs.rs"/>
   </a>
   <a href="https://zeon256.github.io/pulau-rs/pulau_rs/">
-    <img src="https://img.shields.io/badge/docs-master--branch-red"/>
+    <img src="https://img.shields.io/badge/docs-main--branch-red?style=flat-square&logo=Docs.rs"/>
   </a>
   <a href="https://github.com/zeon256/pulau-rs/actions">
-    <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/Test%20Rust%20project"/>
+    <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/rust.yml?style=flat-square"/>
   </a>
 </p>
 
