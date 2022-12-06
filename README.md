@@ -62,4 +62,4 @@ fn make_uf_quickunion() {
 ```
 
 ### License
-lta-rs is licensed under MIT license (LICENSE-MIT or <http://opensource.org/licenses/MIT>)
+pulau-rs is licensed under MIT license (LICENSE-MIT or <http://opensource.org/licenses/MIT>)
