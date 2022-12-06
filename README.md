@@ -30,7 +30,6 @@ The library provides the following algorithms that is used with `UnionFind`.
 | :----------------------------------------------- | :-----------------------------: | :----: | ------------------: | ------------------: | ------------------: |
 | QuickFind                                        |           `QuickFind`           | `O(N)` |              `O(N)` |              `O(1)` |              `O(1)` |
 | QuickUnion                                       | `QuickUnion<UnWeighted, false>` | `O(N)` |              `O(N)` |              `O(N)` |              `O(N)` |
-| Weighted QuickUnion                              |   `QuickUnion<ByRank, false>`   | `O(N)` |           `O(lg N)` |           `O(lg N)` |           `O(lg N)` |
 | Weighted (Rank) QuickUnion With Path Compression |   `QuickUnion<ByRank, true>`    | `O(N)` | `Amortized O(α(N))` | `Amortized O(α(N))` | `Amortized O(α(N))` |
 | Weighted (Size) QuickUnion With Path Compression |   `QuickUnion<BySize, true>`    | `O(N)` | `Amortized O(α(N))` | `Amortized O(α(N))` | `Amortized O(α(N))` |
 

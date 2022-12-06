@@ -64,13 +64,12 @@
     nonstandard_style,
     rust_2018_idioms
 )]
-
 #![doc = include_str!("../libdoc.md")]
 
 pub mod quickfind;
 pub mod quickunion;
 
-use core::ops::AddAssign;
+use core::ops::{AddAssign, Index, IndexMut};
 
 pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
@@ -84,7 +83,7 @@ macro_rules! generate_index_type_impl{
     ($($num_type:ident), *) => {
         $(
             impl IndexType for $num_type {
-                
+
                 #[inline(always)]
                 fn usize(self) -> usize {
                     self as usize
@@ -104,15 +103,15 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>;
 
 /// [`UnionFind`] data structure
-/// 
+///
 /// This data structure stores a collection of disjoint (non-overlapping) sets.
-/// 
+///
 /// [`UnionFind`] is parameterized by the following
 /// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
 /// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`]
-/// - `N` - Size of internal representative buffer 
+/// - `N` - Size of internal representative buffer
 /// - `M` - Size of internal heuristic buffer, this defaults to sz `N`, but it must be 0 if you are using [`QuickFind`]
-/// 
+///
 /// # Example
 /// ```rust
 /// use pulau_rs::{UnionFind, QuickFind, QuickUnion};
@@ -120,18 +119,18 @@ pub type UnionFindQuickUnion<T, const N: usize> = UnionFind<QuickUnion, T, N, N>
 ///     // construct with quickfind algorithm with fixed size 10
 ///     let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
 /// }
-/// 
+///
 /// fn make_uf_quickunion() {
 ///     // construct with weighted quickunion with path compression algorithm with fixed size 10
 ///     let mut uf = UnionFind::<QuickUnion, u32, 10>::new();
 /// }
 /// ```
-/// 
+///
 /// # Size Guarantees
 /// Size of [`UnionFind`] depends on whether the algorithm you have chosen is weighted
-/// 
+///
 /// If it's weighted then, size of [`UnionFind`] is `2 * T * N`
-/// 
+///
 /// Else it will be `T * N`
 pub struct UnionFind<A, T, const N: usize, const M: usize = N>
 where
@@ -180,12 +179,18 @@ where
     pub fn heuristic(&self) -> &A::HeuristicContainer<T, M> {
         &self.heuristic
     }
-
 }
 
 pub trait WithContainer {
-    type HeuristicContainer<T: IndexType, const N: usize>: AsRef<[T]> + AsMut<[T]>;
-    type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]> + AsMut<[R]>;
+    type HeuristicContainer<T: IndexType, const N: usize>: AsRef<[T]>
+        + AsMut<[T]>
+        + Index<usize, Output = T>
+        + IndexMut<usize, Output = T>;
+
+    type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]>
+        + AsMut<[R]>
+        + Index<usize, Output = R>
+        + IndexMut<usize, Output = R>;
 }
 
 pub trait Union<T, const N: usize, const M: usize>
@@ -215,7 +220,12 @@ where
     Self: WithContainer,
     T: IndexType,
 {
-    fn connected(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, a: T, b: T) -> bool;
+    fn connected(
+        &mut self,
+        representative: &mut Self::RepresentativeContainer<T, N>,
+        a: T,
+        b: T,
+    ) -> bool;
 }
 
 #[cfg(test)]
