@@ -8,7 +8,7 @@ repository = "https://github.com/zeon256/pulau-rs"
 description = "Allocation-free UnionFind library for bare metal environments"
 readme = "README.md"
 license = "MIT"
-keywords = ["dsu", "disjoint-set union", "unionfind", "no-std"]
+keywords = ["dsu", "disjoint-set", "unionfind", "no-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
