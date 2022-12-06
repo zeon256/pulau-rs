@@ -17,6 +17,9 @@ Allocation-free UnionFind library for bare metal environments
   <a href="https://github.com/zeon256/pulau-rs/actions">
     <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/rust.yml?style=flat-square"/>
   </a>
+  <a href="">
+    <img src="https://img.shields.io/badge/Rust-1.65-green?style=flat-square&logo=rust"/>
+  </a>
 </p>
 
 The library provides the following algorithms that is used with `UnionFind`.
