@@ -60,3 +60,6 @@ fn make_uf_quickunion() {
     assert!(uf.connected(1, 3));
 }
 ```
+
+### License
+lta-rs is licensed under MIT license (LICENSE-MIT or <http://opensource.org/licenses/MIT>)
