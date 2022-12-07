@@ -28,6 +28,13 @@ The library provides the following algorithms that is used with `UnionFind`.
 - Weighted QuickUnion
 - Weighted QuickUnion With Path Compression (Default)
 
+## Setup
+### Cargo.toml setup
+```
+[dependencies]
+pulau-rs = "0.1.0"
+```
+
 ## Asymptotic Complexity
 | Algorithm                                        |             Struct              |  Init  |               Union |                Find |           Connected |
 | :----------------------------------------------- | :-----------------------------: | :----: | ------------------: | ------------------: | ------------------: |
