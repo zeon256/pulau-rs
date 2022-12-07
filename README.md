@@ -30,7 +30,7 @@ The library provides the following algorithms that is used with `UnionFind`.
 
 ## Setup
 ### Cargo.toml setup
-```
+```toml
 [dependencies]
 pulau-rs = "0.1.0"
 ```
