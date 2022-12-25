@@ -15,7 +15,7 @@ Allocation-free UnionFind library for bare metal environments
     <img src="https://img.shields.io/badge/docs-main--branch-red?style=for-the-badge&logo=Docs.rs"/>
   </a>
   <a href="https://github.com/zeon256/pulau-rs/actions">
-    <img src="https://img.shields.io/github/workflow/status/zeon256/pulau-rs/Test%20Rust%20project?style=for-the-badge"/>
+    <img src="https://img.shields.io/github/actions/workflow/status/zeon256/pulau-rs/rust.yml?branch=main&style=for-the-badge"/>
   </a>
   <a href="">
     <img src="https://img.shields.io/badge/Rust-1.65-green?style=for-the-badge&logo=rust"/>
