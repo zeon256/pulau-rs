@@ -241,6 +241,18 @@ mod tests {
     }
 
     #[test]
+    fn test_getter_qu() {        
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        for _ in uf.heuristic() {
+            panic!("Should not even loop!");
+        }
+    }
+
+    #[test]
     fn test_qu_mem() {
         assert_eq!(
             mem::size_of::<[u32; 10]>(),
@@ -260,6 +272,18 @@ mod tests {
         uf.union_sets(6, 5);
         uf.union_sets(9, 4);
         assert!(uf.connected(3, 9));
+    }
+
+    #[test]
+    fn test_getter_qupc() {        
+        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        for _ in uf.heuristic() {
+            panic!("Should not even loop!");
+        }
     }
 
     #[test]

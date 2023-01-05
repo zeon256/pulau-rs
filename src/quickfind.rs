@@ -82,7 +82,7 @@ generate_default_ctor_quickfind!(u8, u16, u32, u64, usize);
 #[cfg(test)]
 mod tests {
     use crate::{tests::CityVertex, QuickFind, UnionFind};
-    use core::mem;
+    use core::{mem, panic};
 
     #[test]
     fn test_qf() {
@@ -142,5 +142,17 @@ mod tests {
             mem::size_of::<[CityVertex<'_>; 10]>(),
             mem::size_of::<UnionFind::<QuickFind, CityVertex<'_>, 10>>()
         );
+    }
+
+    #[test]
+    fn test_getter() {        
+        let mut uf = UnionFind::<QuickFind, u32, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        for _ in uf.heuristic() {
+            panic!("Should not even loop!");
+        }
     }
 }
