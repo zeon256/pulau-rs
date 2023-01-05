@@ -76,7 +76,7 @@ pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
-pub trait IndexType: Eq + Copy {
+pub trait VertexType: Eq + Copy {
     type IdentifierType: Copy + Eq + PartialOrd + AddAssign<Self::IdentifierType>;
 
     fn id(&self) -> Self::IdentifierType;
@@ -87,7 +87,7 @@ pub trait IndexType: Eq + Copy {
 macro_rules! generate_index_type_impl{
     ($($num_type:ident), *) => {
         $(
-            impl IndexType for $num_type {
+            impl VertexType for $num_type {
                 type IdentifierType = Self;
 
                 #[inline(always)]
@@ -117,7 +117,7 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 ///
 /// [`UnionFind`] is parameterized by the following
 /// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
-/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements IndexType
+/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements `IndexType`
 /// - `N` - Size of internal representative buffer
 ///
 /// # Example
@@ -143,8 +143,8 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// Else it will be `T * N`
 pub struct UnionFind<A, T, const N: usize>
 where
-    T: IndexType,
-    A: WithContainer,
+    T: VertexType,
+    A: AlgorithmContainer,
 {
     representative: A::RepresentativeContainer<T, N>,
     heuristic: A::HeuristicContainer<N>,
@@ -153,7 +153,7 @@ where
 
 impl<A, T, const N: usize> UnionFind<A, T, N>
 where
-    T: IndexType,
+    T: VertexType,
     A: Union<T, N> + Find<T, N> + Connected<T, N> + Default,
 {
     /// Checks whether 2 nodes are connected to each other
@@ -183,13 +183,13 @@ where
     }
 }
 
-pub trait WithContainer {
+pub trait AlgorithmContainer {
     type HeuristicContainer<const N: usize>: AsRef<[usize]>
         + AsMut<[usize]>
         + Index<usize, Output = usize>
         + IndexMut<usize, Output = usize>;
 
-    type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]>
+    type RepresentativeContainer<R: VertexType, const N: usize>: AsRef<[R]>
         + AsMut<[R]>
         + Index<usize, Output = R>
         + IndexMut<usize, Output = R>;
@@ -197,8 +197,8 @@ pub trait WithContainer {
 
 pub trait Union<T, const N: usize>
 where
-    Self: WithContainer,
-    T: IndexType,
+    Self: AlgorithmContainer,
+    T: VertexType,
 {
     fn union_sets(
         representative: &mut Self::RepresentativeContainer<T, N>,
@@ -210,16 +210,16 @@ where
 
 pub trait Find<T, const N: usize>
 where
-    Self: WithContainer,
-    T: IndexType,
+    Self: AlgorithmContainer,
+    T: VertexType,
 {
     fn find(representative: &mut Self::RepresentativeContainer<T, N>, a: T::IdentifierType) -> T;
 }
 
 pub trait Connected<T, const N: usize>
 where
-    Self: WithContainer,
-    T: IndexType,
+    Self: AlgorithmContainer,
+    T: VertexType,
 {
     fn connected(
         representative: &mut Self::RepresentativeContainer<T, N>,
@@ -230,7 +230,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{IndexType, QuickFind, QuickUnion, UnionFind};
+    use crate::{VertexType, QuickFind, QuickUnion, UnionFind};
     use core::{mem::size_of, ops::AddAssign};
 
     #[test]
@@ -299,7 +299,7 @@ mod tests {
 
     impl<'a> Eq for CityVertex<'a> {}
 
-    impl<'a> IndexType for CityVertex<'a> {
+    impl<'a> VertexType for CityVertex<'a> {
         type IdentifierType = u8;
 
         fn id(&self) -> u8 {

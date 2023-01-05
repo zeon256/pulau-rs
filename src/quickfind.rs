@@ -1,12 +1,12 @@
-use crate::{Connected, Find, IndexType, Union, UnionFind, WithContainer};
+use crate::{Connected, Find, VertexType, Union, UnionFind, AlgorithmContainer};
 
 /// [`QuickFind`] algorithm
 #[derive(Debug, Default)]
 pub struct QuickFind;
 
-impl WithContainer for QuickFind {
+impl AlgorithmContainer for QuickFind {
     type HeuristicContainer<const N: usize> = [usize; 0];
-    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
+    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
 }
 
 macro_rules! generate_default_ctor_quickfind {
@@ -34,7 +34,7 @@ macro_rules! generate_default_ctor_quickfind {
 
 impl<T, const N: usize> Connected<T, N> for QuickFind
 where
-    T: IndexType,
+    T: VertexType,
     Self: Find<T, N>,
 {
     fn connected(
@@ -48,7 +48,7 @@ where
 
 impl<T, const N: usize> Union<T, N> for QuickFind
 where
-    T: IndexType,
+    T: VertexType,
     Self: Find<T, N>,
 {
     fn union_sets(
@@ -69,7 +69,7 @@ where
 
 impl<T, const N: usize> Find<T, N> for QuickFind
 where
-    T: IndexType,
+    T: VertexType,
 {
     fn find(representative: &mut Self::RepresentativeContainer<T, N>, a: T::IdentifierType) -> T {
         assert!(T::usize(a) < N);

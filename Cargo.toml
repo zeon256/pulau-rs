@@ -1,6 +1,6 @@
 [package]
 name = "pulau-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Budi Syahiddin <me@inve.rs>"]
 homepage = "https://github.com/zeon256/pulau-rs"

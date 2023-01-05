@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::{Connected, Find, IndexType, Union, UnionFind, WithContainer};
+use crate::{Connected, Find, VertexType, Union, UnionFind, AlgorithmContainer};
 
 /// Link by rank of tree
 #[derive(Default, Debug)]
@@ -26,19 +26,19 @@ pub struct QuickUnion<H = ByRank, const COMPRESS_PATH: bool = true> {
     heuristic: PhantomData<H>,
 }
 
-impl WithContainer for QuickUnion<ByRank> {
+impl AlgorithmContainer for QuickUnion<ByRank> {
     type HeuristicContainer<const N: usize> = [usize; N];
-    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
+    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
 }
 
-impl WithContainer for QuickUnion<BySize> {
+impl AlgorithmContainer for QuickUnion<BySize> {
     type HeuristicContainer<const N: usize> = [usize; N];
-    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
+    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
 }
 
-impl<const PATH_COMPRESS: bool> WithContainer for QuickUnion<Unweighted, PATH_COMPRESS> {
+impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted, PATH_COMPRESS> {
     type HeuristicContainer<const N: usize> = [usize; 0];
-    type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
+    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
 }
 
 macro_rules! generate_representative {
@@ -105,7 +105,7 @@ macro_rules! generate_default_ctor {
 impl<H, T, const N: usize, const PATH_COMPRESS: bool> Connected<T, N>
     for QuickUnion<H, PATH_COMPRESS>
 where
-    T: IndexType,
+    T: VertexType,
     Self: Find<T, N>,
 {
     fn connected(
@@ -119,7 +119,7 @@ where
 
 impl<T, const N: usize> Union<T, N> for QuickUnion
 where
-    T: IndexType,
+    T: VertexType,
 {
     fn union_sets(
         representative: &mut Self::RepresentativeContainer<T, N>,
@@ -144,7 +144,7 @@ where
 
 impl<T, const N: usize> Union<T, N> for QuickUnion<BySize>
 where
-    T: IndexType,
+    T: VertexType,
 {
     fn union_sets(
         representative: &mut Self::RepresentativeContainer<T, N>,
@@ -168,7 +168,7 @@ where
 impl<T, const N: usize, const PATH_COMPRESS: bool> Union<T, N>
     for QuickUnion<Unweighted, PATH_COMPRESS>
 where
-    T: IndexType,
+    T: VertexType,
     Self: Find<T, N>,
 {
     fn union_sets(
@@ -190,8 +190,8 @@ where
 
 impl<A, T, const N: usize> Find<T, N> for QuickUnion<A, false>
 where
-    T: IndexType,
-    Self: WithContainer,
+    T: VertexType,
+    Self: AlgorithmContainer,
 {
     fn find(
         representative: &mut Self::RepresentativeContainer<T, N>,
@@ -206,8 +206,8 @@ where
 
 impl<A, T, const N: usize> Find<T, N> for QuickUnion<A, true>
 where
-    T: IndexType,
-    Self: WithContainer,
+    T: VertexType,
+    Self: AlgorithmContainer,
 {
     fn find(
         representative: &mut Self::RepresentativeContainer<T, N>,
