@@ -154,7 +154,7 @@ where
 impl<A, T, const N: usize> UnionFind<A, T, N>
 where
     T: VertexType,
-    A: Union<T, N> + Find<T, N> + Connected<T, N> + Default,
+    A: Union<T, N> + Find<T, N> + Connected<T, N>,
 {
     /// Checks whether 2 nodes are connected to each other
     pub fn connected(&mut self, a: T::IdentifierType, b: T::IdentifierType) -> bool {
