@@ -1,4 +1,4 @@
-use crate::{Connected, Find, VertexType, Union, UnionFind, AlgorithmContainer};
+use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
 
 /// [`QuickFind`] algorithm
 #[derive(Debug, Default)]
@@ -32,13 +32,13 @@ macro_rules! generate_default_ctor_quickfind {
     };
 }
 
-impl<T, const N: usize> Connected<T, N> for QuickFind
+impl<T> Connected<T> for QuickFind
 where
     T: VertexType,
-    Self: Find<T, N>,
+    Self: Find<T>,
 {
     fn connected(
-        representative: &mut Self::RepresentativeContainer<T, N>,
+        representative: &mut [T],
         a: T::IdentifierType,
         b: T::IdentifierType,
     ) -> bool {
@@ -46,14 +46,14 @@ where
     }
 }
 
-impl<T, const N: usize> Union<T, N> for QuickFind
+impl<T> Union<T> for QuickFind
 where
     T: VertexType,
-    Self: Find<T, N>,
+    Self: Find<T>,
 {
     fn union_sets(
-        representative: &mut Self::RepresentativeContainer<T, N>,
-        _heuristic: &mut Self::HeuristicContainer<0>,
+        representative: &mut [T],
+        _heuristic: &mut [usize],
         a: T::IdentifierType,
         b: T::IdentifierType,
     ) {
@@ -67,12 +67,12 @@ where
     }
 }
 
-impl<T, const N: usize> Find<T, N> for QuickFind
+impl<T> Find<T> for QuickFind
 where
     T: VertexType,
 {
-    fn find(representative: &mut Self::RepresentativeContainer<T, N>, a: T::IdentifierType) -> T {
-        assert!(T::usize(a) < N);
+    fn find(representative: &mut [T], a: T::IdentifierType) -> T {
+        assert!(T::usize(a) < representative.len());
         representative[T::usize(a)]
     }
 }
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_getter() {        
+    fn test_getter() {
         let mut uf = UnionFind::<QuickFind, u32, 10>::default();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
