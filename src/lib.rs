@@ -70,7 +70,7 @@ pub mod quickfind;
 pub mod quickunion;
 
 use core::marker::PhantomData;
-use core::ops::{AddAssign, Index, IndexMut};
+use core::ops::AddAssign;
 
 pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
@@ -137,7 +137,7 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// # Size Guarantees
 /// Size of [`UnionFind`] depends on whether the algorithm you have chosen is weighted
 ///
-/// Assuming no padding, 
+/// Assuming no padding,
 /// If it's weighted then, size of [`UnionFind`] is `T * N + size_of(usize) * N`
 ///
 /// Else it will be `T * N`
@@ -154,22 +154,22 @@ where
 impl<A, T, const N: usize> UnionFind<A, T, N>
 where
     T: VertexType,
-    A: Union<T, N> + Find<T, N> + Connected<T, N>,
+    A: AlgorithmContainer + Union<T> + Find<T> + Connected<T>,
 {
     /// Checks whether 2 nodes are connected to each other
     pub fn connected(&mut self, a: T::IdentifierType, b: T::IdentifierType) -> bool {
-        A::connected(&mut self.representative, a, b)
+        A::connected(self.representative.as_mut(), a, b)
     }
 
     /// Finds a node
     pub fn find(&mut self, a: T::IdentifierType) -> T {
-        A::find(&mut self.representative, a)
+        A::find(self.representative.as_mut(), a)
     }
 
     /// Unions 2 node. If those 2 nodes are already part of the same component
     /// then this does nothing
     pub fn union_sets(&mut self, a: T::IdentifierType, b: T::IdentifierType) {
-        A::union_sets(&mut self.representative, &mut self.heuristic, a, b)
+        A::union_sets(self.representative.as_mut(), self.heuristic.as_mut(), a, b)
     }
 
     /// Gets the representative slice
@@ -184,54 +184,41 @@ where
 }
 
 pub trait AlgorithmContainer {
-    type HeuristicContainer<const N: usize>: AsRef<[usize]>
-        + AsMut<[usize]>
-        + Index<usize, Output = usize>
-        + IndexMut<usize, Output = usize>;
+    type HeuristicContainer<const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
 
-    type RepresentativeContainer<R: VertexType, const N: usize>: AsRef<[R]>
-        + AsMut<[R]>
-        + Index<usize, Output = R>
-        + IndexMut<usize, Output = R>;
+    type RepresentativeContainer<R: VertexType, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
-pub trait Union<T, const N: usize>
+pub trait Union<T>
 where
-    Self: AlgorithmContainer,
     T: VertexType,
 {
     fn union_sets(
-        representative: &mut Self::RepresentativeContainer<T, N>,
-        heuristic: &mut Self::HeuristicContainer<N>,
+        representative: &mut [T],
+        heuristic: &mut [usize],
         a: T::IdentifierType,
         b: T::IdentifierType,
     );
 }
 
-pub trait Find<T, const N: usize>
+pub trait Find<T>
 where
-    Self: AlgorithmContainer,
     T: VertexType,
 {
-    fn find(representative: &mut Self::RepresentativeContainer<T, N>, a: T::IdentifierType) -> T;
+    fn find(representative: &mut [T], a: T::IdentifierType) -> T;
 }
 
-pub trait Connected<T, const N: usize>
+pub trait Connected<T>
 where
-    Self: AlgorithmContainer,
     T: VertexType,
 {
-    fn connected(
-        representative: &mut Self::RepresentativeContainer<T, N>,
-        a: T::IdentifierType,
-        b: T::IdentifierType,
-    ) -> bool;
+    fn connected(representative: &mut [T], a: T::IdentifierType, b: T::IdentifierType) -> bool;
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{VertexType, QuickFind, QuickUnion, UnionFind};
-    use core::{mem::size_of, ops::AddAssign};
+    use crate::{QuickFind, QuickUnion, UnionFind, VertexType};
+    use core::mem::size_of;
 
     #[test]
     fn test_qf_sz() {
@@ -276,12 +263,6 @@ mod tests {
                 name,
                 road_cost,
             }
-        }
-    }
-
-    impl<'a> AddAssign for CityVertex<'a> {
-        fn add_assign(&mut self, rhs: Self) {
-            self.id += rhs.id;
         }
     }
 
