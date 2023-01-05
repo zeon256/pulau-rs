@@ -29,14 +29,14 @@ The library provides the following algorithms that is used with [UnionFind].
 use pulau_rs::{UnionFind, QuickFind, QuickUnion, BySize};
 fn make_uf_quickfind() {
     // construct with quickfind algorithm with fixed size 10
-    let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
+    let mut uf = UnionFind::<QuickFind, u32, 10>::default();
 }
 
 fn make_uf_quickunion() {
     // construct weighted quickunion with path compression algorithm with fixed size 10
-    let mut uf = UnionFind::<QuickUnion, u32, 10>::new();
+    let mut uf = UnionFind::<QuickUnion, u32, 10>::default();
     // construct weighted quickunion with path compression using size heuristics and fixed size 10
-    let mut uf_with_sz = UnionFind::<QuickUnion<BySize>, u8, 10>::new();
+    let mut uf_with_sz = UnionFind::<QuickUnion<BySize>, u8, 10>::default();
     uf.union_sets(1,2);
     uf.union_sets(2,3);
     uf.union_sets(2,3);

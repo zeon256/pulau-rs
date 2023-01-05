@@ -27,17 +27,17 @@ pub struct QuickUnion<H = ByRank, const COMPRESS_PATH: bool = true> {
 }
 
 impl WithContainer for QuickUnion<ByRank> {
-    type HeuristicContainer<T: IndexType, const N: usize> = [T; N];
+    type HeuristicContainer<const N: usize> = [usize; N];
     type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
 }
 
 impl WithContainer for QuickUnion<BySize> {
-    type HeuristicContainer<T: IndexType, const N: usize> = [T; N];
+    type HeuristicContainer<const N: usize> = [usize; N];
     type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
 }
 
 impl<const PATH_COMPRESS: bool> WithContainer for QuickUnion<Unweighted, PATH_COMPRESS> {
-    type HeuristicContainer<T: IndexType, const N: usize> = [T; 0];
+    type HeuristicContainer<const N: usize> = [usize; 0];
     type RepresentativeContainer<R: IndexType, const N: usize> = [R; N];
 }
 
@@ -55,7 +55,7 @@ macro_rules! generate_representative {
 macro_rules! generate_default_ctor {
     ($($num_type:ident), *) => {
         $(
-        impl<const N: usize> Default for UnionFind<QuickUnion, $num_type, N, N>
+        impl<const N: usize> Default for UnionFind<QuickUnion, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -66,7 +66,7 @@ macro_rules! generate_default_ctor {
             }
         }
 
-        impl<const N: usize> Default for UnionFind<QuickUnion<BySize>, $num_type, N, N>
+        impl<const N: usize> Default for UnionFind<QuickUnion<BySize>, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -77,7 +77,7 @@ macro_rules! generate_default_ctor {
             }
         }
 
-        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, false>, $num_type, N, 0>
+        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, false>, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -88,7 +88,7 @@ macro_rules! generate_default_ctor {
             }
         }
 
-        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, true>, $num_type, N, 0>
+        impl<const N: usize> Default for UnionFind<QuickUnion<Unweighted, true>, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -109,86 +109,82 @@ where
     Self: Find<T, N>,
 {
     fn connected(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        a: T,
-        b: T,
+        a: T::IdentifierType,
+        b: T::IdentifierType,
     ) -> bool {
-        self.find(representative, a) == self.find(representative, b)
+        Self::find(representative, a) == Self::find(representative, b)
     }
 }
 
-impl<T, const N: usize, const M: usize> Union<T, N, M> for QuickUnion
+impl<T, const N: usize> Union<T, N> for QuickUnion
 where
     T: IndexType,
 {
     fn union_sets(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        rank: &mut Self::HeuristicContainer<T, M>,
-        mut a: T,
-        mut b: T,
+        rank: &mut Self::HeuristicContainer<N>,
+        mut a: T::IdentifierType,
+        mut b: T::IdentifierType,
     ) {
-        a = self.find(representative, a);
-        b = self.find(representative, b);
+        a = Self::find(representative, a).id();
+        b = Self::find(representative, b).id();
 
         if a != b {
-            if rank[a.usize()] < rank[b.usize()] {
+            if rank[T::usize(a)] < rank[T::usize(b)] {
                 core::mem::swap(&mut a, &mut b);
             }
-            representative[b.usize()] = a;
-            if rank[a.usize()] == rank[b.usize()] {
-                rank[a.usize()] += T::one();
+            representative[T::usize(b)] = representative[T::usize(a)];
+            if rank[T::usize(a)] == rank[T::usize(b)] {
+                rank[T::usize(a)] += 1;
             }
         }
     }
 }
 
-impl<T, const N: usize, const M: usize> Union<T, N, M> for QuickUnion<BySize>
+impl<T, const N: usize> Union<T, N> for QuickUnion<BySize>
 where
     T: IndexType,
 {
     fn union_sets(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        size: &mut Self::HeuristicContainer<T, M>,
-        mut a: T,
-        mut b: T,
+        size: &mut Self::HeuristicContainer<N>,
+        mut a: T::IdentifierType,
+        mut b: T::IdentifierType,
     ) {
-        a = self.find(representative, a);
-        b = self.find(representative, b);
+        a = Self::find(representative, a).id();
+        b = Self::find(representative, b).id();
 
         if a != b {
-            if size[a.usize()] < size[b.usize()] {
+            if size[T::usize(a)] < size[T::usize(b)] {
                 core::mem::swap(&mut a, &mut b);
             }
-            representative[b.usize()] = a;
-            size[a.usize()] += size[b.usize()];
+            representative[T::usize(b)] = representative[T::usize(a)];
+            size[T::usize(a)] += size[T::usize(b)];
         }
     }
 }
 
-impl<T, const N: usize, const M: usize, const PATH_COMPRESS: bool> Union<T, N, M>
+impl<T, const N: usize, const PATH_COMPRESS: bool> Union<T, N>
     for QuickUnion<Unweighted, PATH_COMPRESS>
 where
     T: IndexType,
     Self: Find<T, N>,
 {
     fn union_sets(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        _heuristic: &mut Self::HeuristicContainer<T, M>,
-        mut a: T,
-        mut b: T,
+        _heuristic: &mut Self::HeuristicContainer<N>,
+        mut a: T::IdentifierType,
+        mut b: T::IdentifierType,
     ) {
-        a = self.find(representative, a);
-        b = self.find(representative, b);
+        a = Self::find(representative, a).id();
+        b = Self::find(representative, b).id();
 
         if a == b {
             return;
         }
 
-        representative[a.usize()] = b;
+        representative[T::usize(a)] = representative[T::usize(b)];
     }
 }
 
@@ -197,11 +193,14 @@ where
     T: IndexType,
     Self: WithContainer,
 {
-    fn find(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, mut a: T) -> T {
-        while a != representative[a.usize()] {
-            a = representative[a.usize()]
+    fn find(
+        representative: &mut Self::RepresentativeContainer<T, N>,
+        mut a: T::IdentifierType,
+    ) -> T {
+        while a != representative[T::usize(a)].id() {
+            a = representative[T::usize(a)].id()
         }
-        a
+        representative[T::usize(a)]
     }
 }
 
@@ -210,13 +209,16 @@ where
     T: IndexType,
     Self: WithContainer,
 {
-    fn find(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, mut a: T) -> T {
-        while a != representative[a.usize()] {
+    fn find(
+        representative: &mut Self::RepresentativeContainer<T, N>,
+        mut a: T::IdentifierType,
+    ) -> T {
+        while a != representative[T::usize(a)].id() {
             // path compression
-            representative[a.usize()] = representative[representative[a.usize()].usize()];
-            a = representative[a.usize()]
+            representative[T::usize(a)] = representative[T::usize(representative[T::usize(a)].id()).id()];
+            a = representative[T::usize(a)].id()
         }
-        a
+        representative[T::usize(a)]
     }
 }
 
@@ -224,13 +226,13 @@ generate_default_ctor!(u8, u16, u32, u64, usize);
 
 #[cfg(test)]
 mod tests {
-    use crate::{QuickUnion, UnionFind};
-
+    use crate::{QuickUnion, UnionFind, tests::CityVertex};
+    use core::mem;
     use super::{BySize, Unweighted};
 
     #[test]
     fn test_qu() {
-        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10, 0>::default();
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
@@ -239,13 +241,37 @@ mod tests {
     }
 
     #[test]
+    fn test_qu_mem() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<Unweighted, false>, u32, 10>>()
+        );
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<Unweighted, false>, CityVertex<'_>, 10>>()
+        );
+    }
+
+    #[test]
     fn test_qupc() {
-        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10, 0>::default();
+        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
         uf.union_sets(9, 4);
         assert!(uf.connected(3, 9));
+    }
+
+    #[test]
+    fn test_qupc_mem() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<Unweighted, true>, u32, 10>>()
+        );
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<Unweighted, true>, CityVertex<'_>, 10>>()
+        );
     }
 
     #[test]
@@ -266,8 +292,20 @@ mod tests {
     }
 
     #[test]
+    fn test_wqupc_mem() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<BySize>, u32, 10>>()
+        );
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
+        );
+    }
+
+    #[test]
     fn test_wqupc_rank() {
-        let mut uf = UnionFind::<QuickUnion, u8, 12>::new();
+        let mut uf = UnionFind::<QuickUnion, u8, 12>::default();
         uf.union_sets(1, 2);
         uf.union_sets(2, 3);
         uf.union_sets(3, 4);
@@ -284,5 +322,17 @@ mod tests {
         uf.union_sets(4, 11);
         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
+
+    #[test]
+    fn test_wqupc_rank_mem() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion, u32, 10>>()
+        );
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<QuickUnion, CityVertex<'_>, 10>>()
+        );
     }
 }

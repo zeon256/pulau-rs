@@ -69,25 +69,35 @@
 pub mod quickfind;
 pub mod quickunion;
 
+use core::marker::PhantomData;
 use core::ops::{AddAssign, Index, IndexMut};
 
 pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
-pub trait IndexType: Copy + Eq + PartialOrd + AddAssign<Self> {
-    fn usize(self) -> usize;
-    fn one() -> Self;
+pub trait IndexType: Eq + Copy {
+    type IdentifierType: Copy + Eq + PartialOrd + AddAssign<Self::IdentifierType>;
+
+    fn id(&self) -> Self::IdentifierType;
+    fn usize(a: Self::IdentifierType) -> usize;
+    fn one() -> Self::IdentifierType;
 }
 
 macro_rules! generate_index_type_impl{
     ($($num_type:ident), *) => {
         $(
             impl IndexType for $num_type {
+                type IdentifierType = Self;
 
                 #[inline(always)]
-                fn usize(self) -> usize {
-                    self as usize
+                fn id(&self) -> Self {
+                    *self
+                }
+
+                #[inline(always)]
+                fn usize(a: Self) -> usize {
+                    a as usize
                 }
 
                 #[inline(always)]
@@ -107,66 +117,59 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 ///
 /// [`UnionFind`] is parameterized by the following
 /// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
-/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`]
+/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements IndexType
 /// - `N` - Size of internal representative buffer
-/// - `M` - Size of internal heuristic buffer, this defaults to sz `N`, but it must be 0 if you are using [`QuickFind`]
 ///
 /// # Example
 /// ```rust
 /// use pulau_rs::{UnionFind, QuickFind, QuickUnion};
 /// fn make_uf_quickfind() {
 ///     // construct with quickfind algorithm with fixed size 10
-///     let mut uf = UnionFind::<QuickFind, u32, 10, 0>::new();
+///     let mut uf = UnionFind::<QuickFind, u32, 10>::default();
 /// }
 ///
 /// fn make_uf_quickunion() {
 ///     // construct with weighted quickunion with path compression algorithm with fixed size 10
-///     let mut uf = UnionFind::<QuickUnion, u32, 10>::new();
+///     let mut uf = UnionFind::<QuickUnion, u32, 10>::default();
 /// }
 /// ```
 ///
 /// # Size Guarantees
 /// Size of [`UnionFind`] depends on whether the algorithm you have chosen is weighted
 ///
-/// If it's weighted then, size of [`UnionFind`] is `2 * T * N`
+/// Assuming no padding, 
+/// If it's weighted then, size of [`UnionFind`] is `T * N + size_of(usize) * N`
 ///
 /// Else it will be `T * N`
-pub struct UnionFind<A, T, const N: usize, const M: usize = N>
+pub struct UnionFind<A, T, const N: usize>
 where
     T: IndexType,
-    A: Union<T, N, M> + Find<T, N> + Connected<T, N>,
+    A: WithContainer,
 {
     representative: A::RepresentativeContainer<T, N>,
-    heuristic: A::HeuristicContainer<T, M>,
-    algorithm: A,
+    heuristic: A::HeuristicContainer<N>,
+    algorithm: PhantomData<A>,
 }
 
-impl<A, T, const N: usize, const M: usize> UnionFind<A, T, N, M>
+impl<A, T, const N: usize> UnionFind<A, T, N>
 where
     T: IndexType,
-    A: Union<T, N, M> + Find<T, N> + Connected<T, N> + Default,
-    Self: Default,
+    A: Union<T, N> + Find<T, N> + Connected<T, N> + Default,
 {
-    /// Construct a new [`UnionFind`] structure based on the type parameters provided
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Checks whether 2 nodes are connected to each other
-    pub fn connected(&mut self, a: T, b: T) -> bool {
-        self.algorithm.connected(&mut self.representative, a, b)
+    pub fn connected(&mut self, a: T::IdentifierType, b: T::IdentifierType) -> bool {
+        A::connected(&mut self.representative, a, b)
     }
 
     /// Finds a node
-    pub fn find(&mut self, a: T) -> T {
-        self.algorithm.find(&mut self.representative, a)
+    pub fn find(&mut self, a: T::IdentifierType) -> T {
+        A::find(&mut self.representative, a)
     }
 
     /// Unions 2 node. If those 2 nodes are already part of the same component
     /// then this does nothing
-    pub fn union_sets(&mut self, a: T, b: T) {
-        self.algorithm
-            .union_sets(&mut self.representative, &mut self.heuristic, a, b)
+    pub fn union_sets(&mut self, a: T::IdentifierType, b: T::IdentifierType) {
+        A::union_sets(&mut self.representative, &mut self.heuristic, a, b)
     }
 
     /// Gets the representative slice
@@ -175,16 +178,16 @@ where
     }
 
     /// Gets the heuristic slice
-    pub fn heuristic(&self) -> &A::HeuristicContainer<T, M> {
+    pub fn heuristic(&self) -> &A::HeuristicContainer<N> {
         &self.heuristic
     }
 }
 
 pub trait WithContainer {
-    type HeuristicContainer<T: IndexType, const N: usize>: AsRef<[T]>
-        + AsMut<[T]>
-        + Index<usize, Output = T>
-        + IndexMut<usize, Output = T>;
+    type HeuristicContainer<const N: usize>: AsRef<[usize]>
+        + AsMut<[usize]>
+        + Index<usize, Output = usize>
+        + IndexMut<usize, Output = usize>;
 
     type RepresentativeContainer<R: IndexType, const N: usize>: AsRef<[R]>
         + AsMut<[R]>
@@ -192,17 +195,16 @@ pub trait WithContainer {
         + IndexMut<usize, Output = R>;
 }
 
-pub trait Union<T, const N: usize, const M: usize>
+pub trait Union<T, const N: usize>
 where
     Self: WithContainer,
     T: IndexType,
 {
     fn union_sets(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        heuristic: &mut Self::HeuristicContainer<T, M>,
-        a: T,
-        b: T,
+        heuristic: &mut Self::HeuristicContainer<N>,
+        a: T::IdentifierType,
+        b: T::IdentifierType,
     );
 }
 
@@ -211,7 +213,7 @@ where
     Self: WithContainer,
     T: IndexType,
 {
-    fn find(&mut self, representative: &mut Self::RepresentativeContainer<T, N>, a: T) -> T;
+    fn find(representative: &mut Self::RepresentativeContainer<T, N>, a: T::IdentifierType) -> T;
 }
 
 pub trait Connected<T, const N: usize>
@@ -220,30 +222,29 @@ where
     T: IndexType,
 {
     fn connected(
-        &mut self,
         representative: &mut Self::RepresentativeContainer<T, N>,
-        a: T,
-        b: T,
+        a: T::IdentifierType,
+        b: T::IdentifierType,
     ) -> bool;
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{QuickFind, QuickUnion, UnionFind};
-    use core::mem::size_of;
+    use crate::{IndexType, QuickFind, QuickUnion, UnionFind};
+    use core::{mem::size_of, ops::AddAssign};
 
     #[test]
     fn test_qf_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u32, 32, 0>>(),
+            size_of::<UnionFind::<QuickFind, u32, 32>>(),
             size_of::<[u32; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u8, 32, 0>>(),
+            size_of::<UnionFind::<QuickFind, u8, 32>>(),
             size_of::<[u8; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, usize, 32, 0>>(),
+            size_of::<UnionFind::<QuickFind, usize, 32>>(),
             size_of::<[usize; 32]>()
         );
     }
@@ -259,5 +260,58 @@ mod tests {
             size_of::<UnionFind::<QuickUnion, usize, 32>>(),
             size_of::<[usize; 32]>() + size_of::<[usize; 32]>()
         );
+    }
+
+    #[derive(Copy, Clone)]
+    pub struct CityVertex<'a> {
+        pub id: u8,
+        pub name: &'a str,
+        pub road_cost: u32,
+    }
+
+    impl<'a> CityVertex<'a> {
+        pub fn new(id: u8, name: &'a str, road_cost: u32) -> Self {
+            Self {
+                id,
+                name,
+                road_cost,
+            }
+        }
+    }
+
+    impl<'a> AddAssign for CityVertex<'a> {
+        fn add_assign(&mut self, rhs: Self) {
+            self.id += rhs.id;
+        }
+    }
+
+    impl<'a> PartialEq for CityVertex<'a> {
+        fn eq(&self, other: &Self) -> bool {
+            self.id == other.id
+        }
+    }
+
+    impl<'a> PartialOrd for CityVertex<'a> {
+        fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+            Some(self.id.cmp(&other.id))
+        }
+    }
+
+    impl<'a> Eq for CityVertex<'a> {}
+
+    impl<'a> IndexType for CityVertex<'a> {
+        type IdentifierType = u8;
+
+        fn id(&self) -> u8 {
+            self.id
+        }
+
+        fn usize(a: u8) -> usize {
+            a as usize
+        }
+
+        fn one() -> u8 {
+            1
+        }
     }
 }
