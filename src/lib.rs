@@ -117,7 +117,7 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 ///
 /// [`UnionFind`] is parameterized by the following
 /// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
-/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements `IndexType`
+/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements `VertexType`
 /// - `N` - Size of internal representative buffer
 ///
 /// # Example
@@ -141,17 +141,17 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// If it's weighted then, size of [`UnionFind`] is `T * N + size_of(usize) * N`
 ///
 /// Else it will be `T * N`
-pub struct UnionFind<A, T, const N: usize>
+pub struct UnionFind<'a, A, T, const N: usize>
 where
-    T: VertexType,
+    T: VertexType + 'a,
     A: AlgorithmContainer,
 {
-    representative: A::RepresentativeContainer<T, N>,
-    heuristic: A::HeuristicContainer<N>,
+    representative: A::RepresentativeContainer<'a, T, N>,
+    heuristic: A::HeuristicContainer<'a, N>,
     algorithm: PhantomData<A>,
 }
 
-impl<A, T, const N: usize> UnionFind<A, T, N>
+impl<'a, A, T, const N: usize> UnionFind<'a, A, T, N>
 where
     T: VertexType,
     A: AlgorithmContainer + Union<T> + Find<T> + Connected<T>,
@@ -173,20 +173,20 @@ where
     }
 
     /// Gets the representative slice
-    pub fn representative(&self) -> &A::RepresentativeContainer<T, N> {
+    pub fn representative(&self) -> &A::RepresentativeContainer<'a, T, N> {
         &self.representative
     }
 
     /// Gets the heuristic slice
-    pub fn heuristic(&self) -> &A::HeuristicContainer<N> {
+    pub fn heuristic(&self) -> &A::HeuristicContainer<'a, N> {
         &self.heuristic
     }
 }
 
 pub trait AlgorithmContainer {
-    type HeuristicContainer<const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
+    type HeuristicContainer<'a, const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
 
-    type RepresentativeContainer<R: VertexType, const N: usize>: AsRef<[R]> + AsMut<[R]>;
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
 pub trait Union<T>
@@ -223,15 +223,15 @@ mod tests {
     #[test]
     fn test_qf_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u32, 32>>(),
+            size_of::<UnionFind::<'_, QuickFind, u32, 32>>(),
             size_of::<[u32; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, u8, 32>>(),
+            size_of::<UnionFind::<'_, QuickFind, u8, 32>>(),
             size_of::<[u8; 32]>()
         );
         assert_eq!(
-            size_of::<UnionFind::<QuickFind, usize, 32>>(),
+            size_of::<UnionFind::<'_, QuickFind, usize, 32>>(),
             size_of::<[usize; 32]>()
         );
     }
@@ -239,12 +239,12 @@ mod tests {
     #[test]
     fn test_wqupc_sz() {
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32>>(),
+            size_of::<UnionFind::<'_, QuickUnion, usize, 32>>(),
             size_of::<[usize; 32]>() * 2
         );
 
         assert_eq!(
-            size_of::<UnionFind::<QuickUnion, usize, 32>>(),
+            size_of::<UnionFind::<'_, QuickUnion, usize, 32>>(),
             size_of::<[usize; 32]>() + size_of::<[usize; 32]>()
         );
     }

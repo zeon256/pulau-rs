@@ -5,14 +5,14 @@ use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
 pub struct QuickFind;
 
 impl AlgorithmContainer for QuickFind {
-    type HeuristicContainer<const N: usize> = [usize; 0];
-    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
 }
 
 macro_rules! generate_default_ctor_quickfind {
     ($($num_type:ident), *) => {
         $(
-        impl<const N: usize> Default for UnionFind<QuickFind, $num_type, N>
+        impl<const N: usize> Default for UnionFind<'_, QuickFind, $num_type, N>
         {
             fn default() -> Self {
                 let mut representative = [0; N];
@@ -37,11 +37,7 @@ where
     T: VertexType,
     Self: Find<T>,
 {
-    fn connected(
-        representative: &mut [T],
-        a: T::IdentifierType,
-        b: T::IdentifierType,
-    ) -> bool {
+    fn connected(representative: &mut [T], a: T::IdentifierType, b: T::IdentifierType) -> bool {
         Self::find(representative, a) == Self::find(representative, b)
     }
 }
@@ -94,7 +90,9 @@ mod tests {
         assert!(uf.connected(3, 9));
     }
 
-    impl<'a, const N: usize> TryFrom<[CityVertex<'a>; N]> for UnionFind<QuickFind, CityVertex<'a>, N> {
+    impl<'a, const N: usize> TryFrom<[CityVertex<'a>; N]>
+        for UnionFind<'_, QuickFind, CityVertex<'a>, N>
+    {
         type Error = &'static str;
 
         fn try_from(cities: [CityVertex<'a>; N]) -> Result<Self, Self::Error> {
@@ -136,11 +134,11 @@ mod tests {
     fn test_sz() {
         assert_eq!(
             mem::size_of::<[u32; 10]>(),
-            mem::size_of::<UnionFind::<QuickFind, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickFind, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>(),
-            mem::size_of::<UnionFind::<QuickFind, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickFind, CityVertex<'_>, 10>>()
         );
     }
 

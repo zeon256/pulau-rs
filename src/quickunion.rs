@@ -94,18 +94,18 @@ pub struct QuickUnion<H = ByRank, const COMPRESS_PATH: bool = true> {
 }
 
 impl AlgorithmContainer for QuickUnion<ByRank> {
-    type HeuristicContainer<const N: usize> = [usize; N];
-    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
+    type HeuristicContainer<'a, const N: usize> = [usize; N];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
 }
 
 impl AlgorithmContainer for QuickUnion<BySize> {
-    type HeuristicContainer<const N: usize> = [usize; N];
-    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
+    type HeuristicContainer<'a, const N: usize> = [usize; N];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
 }
 
 impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted, PATH_COMPRESS> {
-    type HeuristicContainer<const N: usize> = [usize; 0];
-    type RepresentativeContainer<R: VertexType, const N: usize> = [R; N];
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
 }
 
 macro_rules! generate_representative {
@@ -122,7 +122,7 @@ macro_rules! generate_representative {
 macro_rules! generate_default_ctor {
     ($($num_type:ident), *) => {
         $(
-        impl<const N: usize> Default for UnionFind<QuickUnion, $num_type, N>
+        impl<const N: usize> Default for UnionFind<'_, QuickUnion, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -133,7 +133,7 @@ macro_rules! generate_default_ctor {
             }
         }
 
-        impl<const N: usize> Default for UnionFind<QuickUnion<BySize>, $num_type, N>
+        impl<const N: usize> Default for UnionFind<'_, QuickUnion<BySize>, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -144,7 +144,7 @@ macro_rules! generate_default_ctor {
             }
         }
 
-        impl<const N: usize, const PATH_COMPRESS: bool> Default for UnionFind<QuickUnion<Unweighted, PATH_COMPRESS>, $num_type, N>
+        impl<const N: usize, const PATH_COMPRESS: bool> Default for UnionFind<'_, QuickUnion<Unweighted, PATH_COMPRESS>, $num_type, N>
         {
             fn default() -> Self {
                 Self {
@@ -237,11 +237,11 @@ mod tests {
     fn test_qu_mem() {
         assert_eq!(
             mem::size_of::<[u32; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<Unweighted, false>, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<Unweighted, false>, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, CityVertex<'_>, 10>>()
         );
     }
 
@@ -271,11 +271,11 @@ mod tests {
     fn test_qupc_mem() {
         assert_eq!(
             mem::size_of::<[u32; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<Unweighted, true>, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<Unweighted, true>, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, CityVertex<'_>, 10>>()
         );
     }
 
@@ -300,11 +300,11 @@ mod tests {
     fn test_wqupc_mem() {
         assert_eq!(
             mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<BySize>, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize>, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
         );
     }
 
@@ -333,22 +333,22 @@ mod tests {
     fn test_wqupc_rank_mem() {
         assert_eq!(
             mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
-            mem::size_of::<UnionFind::<QuickUnion, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion, CityVertex<'_>, 10>>()
         );
     }
 
     struct ByRankVec;
 
     impl AlgorithmContainer for QuickUnion<ByRankVec> {
-        type HeuristicContainer<const N: usize> = heapless::Vec<usize, N>;
-        type RepresentativeContainer<R: VertexType, const N: usize> = heapless::Vec<R, N>;
+        type HeuristicContainer<'a, const N: usize> = heapless::Vec<usize, N>;
+        type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = heapless::Vec<R, N>;
     }
 
-    impl<const N: usize> UnionFind<QuickUnion<ByRankVec>, u8, N> {
+    impl<const N: usize> UnionFind<'_, QuickUnion<ByRankVec>, u8, N> {
         pub fn new() -> Self {
             let mut representative = heapless::Vec::<_, N>::new();
             let _ = representative.resize(N, 0);
@@ -391,6 +391,75 @@ mod tests {
     #[test]
     fn test_vec_heapless() {
         let mut uf = UnionFind::<QuickUnion<ByRankVec>, u8, 12>::new();
+
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(4, 11);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
+    struct ByRankSlice;
+
+    impl AlgorithmContainer for QuickUnion<ByRankSlice> {
+        type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
+        type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
+    }
+
+    impl<'a, const N: usize> UnionFind<'a, QuickUnion<ByRankSlice>, u8, N> {
+        pub fn new(representative: &'a mut [u8], heuristic: &'a mut [usize]) -> Self {
+            Self {
+                representative,
+                heuristic,
+                algorithm: Default::default(),
+            }
+        }
+    }
+
+    impl Heuristic for ByRankSlice {
+        fn handle_decision<T>(
+            mut a: T::IdentifierType,
+            mut b: T::IdentifierType,
+            rank: &mut [usize],
+            representative: &mut [T],
+        ) where
+            T: VertexType,
+        {
+            if a != b {
+                if rank[T::usize(a)] < rank[T::usize(b)] {
+                    core::mem::swap(&mut a, &mut b);
+                }
+                representative[T::usize(b)] = representative[T::usize(a)];
+                if rank[T::usize(a)] == rank[T::usize(b)] {
+                    rank[T::usize(a)] += 1;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_slice() {
+        let mut representative = heapless::Vec::<_, 12>::new();
+        let _ = representative.resize(12, 0);
+
+        for i in 0..(12 as u8) {
+            representative[i as usize] = i;
+        }
+
+        let mut heuristic = heapless::Vec::<usize, 12>::from_slice(&[0; 12]).unwrap();
+
+        let mut uf =
+            UnionFind::<QuickUnion<ByRankSlice>, u8, 12>::new(&mut representative, &mut heuristic);
 
         uf.union_sets(1, 2);
         uf.union_sets(2, 3);
