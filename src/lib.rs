@@ -81,7 +81,6 @@ pub trait VertexType: Eq + Copy {
 
     fn id(&self) -> Self::IdentifierType;
     fn usize(a: Self::IdentifierType) -> usize;
-    fn one() -> Self::IdentifierType;
 }
 
 macro_rules! generate_index_type_impl{
@@ -98,11 +97,6 @@ macro_rules! generate_index_type_impl{
                 #[inline(always)]
                 fn usize(a: Self) -> usize {
                     a as usize
-                }
-
-                #[inline(always)]
-                fn one() -> Self {
-                    1
                 }
             }
         )*
@@ -292,10 +286,6 @@ mod tests {
 
         fn usize(a: u8) -> usize {
             a as usize
-        }
-
-        fn one() -> u8 {
-            1
         }
     }
 }
