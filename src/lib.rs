@@ -141,6 +141,9 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// If it's weighted then, size of [`UnionFind`] is `T * N + size_of(usize) * N`
 ///
 /// Else it will be `T * N`
+/// 
+/// If you are using borrowed buffers, then the size will be the `core::mem::size_of::<usize>() * 2`
+/// if it weighted, else it will just be `core::mem::size_of::<usize>()`
 pub struct UnionFind<'a, A, T, const N: usize>
 where
     T: VertexType + 'a,

@@ -2,11 +2,16 @@ use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
 
 /// [`QuickFind`] algorithm
 #[derive(Debug, Default)]
-pub struct QuickFind;
+pub struct QuickFind<const IS_SLICE: bool = false>;
 
-impl AlgorithmContainer for QuickFind {
+impl AlgorithmContainer for QuickFind<false> {
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
+}
+
+impl AlgorithmContainer for QuickFind<true> {
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
 }
 
 macro_rules! generate_default_ctor_quickfind {
@@ -32,7 +37,20 @@ macro_rules! generate_default_ctor_quickfind {
     };
 }
 
-impl<T> Connected<T> for QuickFind
+impl<'a, T, const N: usize> UnionFind<'a, QuickFind<true>, T, N>
+where
+    T: VertexType,
+{
+    pub fn new(representative: &'a mut [T]) -> Self {
+        Self {
+            representative,
+            heuristic: [0; 0],
+            algorithm: Default::default(),
+        }
+    }
+}
+
+impl<T, const IS_SLICE: bool> Connected<T> for QuickFind<IS_SLICE>
 where
     T: VertexType,
     Self: Find<T>,
@@ -42,7 +60,7 @@ where
     }
 }
 
-impl<T> Union<T> for QuickFind
+impl<T, const IS_SLICE: bool> Union<T> for QuickFind<IS_SLICE>
 where
     T: VertexType,
     Self: Find<T>,
@@ -63,7 +81,7 @@ where
     }
 }
 
-impl<T> Find<T> for QuickFind
+impl<T, const IS_SLICE: bool> Find<T> for QuickFind<IS_SLICE>
 where
     T: VertexType,
 {
@@ -83,6 +101,17 @@ mod tests {
     #[test]
     fn test_qf() {
         let mut uf = UnionFind::<QuickFind, u32, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        assert!(uf.connected(3, 9));
+    }
+
+    #[test]
+    fn test_qf_slice() {
+        let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
+        let mut uf = UnionFind::<QuickFind<true>, u32, 10>::new(representative.as_mut());
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
@@ -135,6 +164,10 @@ mod tests {
         assert_eq!(
             mem::size_of::<[u32; 10]>(),
             mem::size_of::<UnionFind::<'_, QuickFind, u32, 10>>()
+        );
+        assert_eq!(
+            mem::size_of::<&'_ [u32]>(),
+            mem::size_of::<UnionFind::<'_, QuickFind<true>, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>(),
