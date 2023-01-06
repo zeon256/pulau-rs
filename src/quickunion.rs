@@ -202,6 +202,20 @@ where
     }
 }
 
+impl<'a, T, const N: usize, const PATH_COMPRESS: bool>
+    UnionFind<'a, QuickUnion<Unweighted<true>, PATH_COMPRESS>, T, N>
+where
+    T: VertexType,
+{
+    pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize; 0]) -> Self {
+        Self {
+            representative,
+            heuristic,
+            algorithm: Default::default(),
+        }
+    }
+}
+
 impl<H, T, const PATH_COMPRESS: bool> Connected<T> for QuickUnion<H, PATH_COMPRESS>
 where
     T: VertexType,
