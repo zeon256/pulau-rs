@@ -246,7 +246,7 @@ mod tests {
         );
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Clone, Copy)]
     pub struct CityVertex<'a> {
         pub id: u8,
         pub name: &'a str,
@@ -263,21 +263,21 @@ mod tests {
         }
     }
 
-    impl<'a> PartialEq for CityVertex<'a> {
+    impl PartialEq for CityVertex<'_> {
         fn eq(&self, other: &Self) -> bool {
             self.id == other.id
         }
     }
 
-    impl<'a> PartialOrd for CityVertex<'a> {
+    impl PartialOrd for CityVertex<'_> {
         fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
             Some(self.id.cmp(&other.id))
         }
     }
 
-    impl<'a> Eq for CityVertex<'a> {}
+    impl Eq for CityVertex<'_> {}
 
-    impl<'a> VertexType for CityVertex<'a> {
+    impl VertexType for CityVertex<'_> {
         type IdentifierType = u8;
 
         fn id(&self) -> u8 {
