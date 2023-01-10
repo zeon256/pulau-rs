@@ -111,9 +111,9 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// This data structure stores a collection of disjoint (non-overlapping) sets.
 ///
 /// [`UnionFind`] is parameterized by the following
-/// - `A` - Algorithm, i.e., [`QuickFind`], [`QuickUnion`]
-/// - `T` - Any unsigned integral types, i.e., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements `VertexType`
-/// - `N` - Size of internal representative buffer
+/// - `A` - Algorithm, e.g., [`QuickFind`], [`QuickUnion`]
+/// - `T` - Any unsigned integral types, e.g., [`u8`], [`u16`], [`u32`], [`u64`], [`usize`] or any type that implements [`VertexType`]
+/// - `N` - Constant size of internal representative buffer
 ///
 /// # Example
 /// ```rust
@@ -138,7 +138,7 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// Else it will be `T * N`
 /// 
 /// If you are using borrowed buffers, then the size will be the `core::mem::size_of::<usize>() * 2`
-/// if it weighted, else it will just be `core::mem::size_of::<usize>()`
+/// if it's weighted, else it will just be `core::mem::size_of::<usize>()`
 pub struct UnionFind<'a, A, T, const N: usize>
 where
     T: VertexType + 'a,
