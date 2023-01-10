@@ -1,3 +1,5 @@
+//! Quick Union implementation
+
 use core::marker::PhantomData;
 
 use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
@@ -112,7 +114,7 @@ impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted, PA
 }
 
 impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted<true>, PATH_COMPRESS> {
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; 0];
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
 }
 
@@ -207,10 +209,10 @@ impl<'a, T, const N: usize, const PATH_COMPRESS: bool>
 where
     T: VertexType,
 {
-    pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize; 0]) -> Self {
+    pub fn new(representative: &'a mut [T]) -> Self {
         Self {
             representative,
-            heuristic,
+            heuristic: [0; 0],
             algorithm: Default::default(),
         }
     }
@@ -364,6 +366,10 @@ mod tests {
             mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
             mem::size_of::<UnionFind::<'_, QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
         );
+        assert_eq!(
+            mem::size_of::<&'_ [CityVertex<'_>]>() + mem::size_of::<&'_ [usize]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize<true>, true>, CityVertex<'_>, 10>>()
+        );
     }
 
     #[test]
@@ -488,7 +494,7 @@ mod tests {
 
     #[test]
     fn test_slice_by_size() {
-        let mut representative = (0..10).collect::<heapless::Vec<u8, 10>>();
+        let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
         let mut heuristic = heapless::Vec::<usize, 10>::from_slice(&[1; 10]).unwrap();
 
         let mut uf =

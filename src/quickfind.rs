@@ -1,3 +1,5 @@
+//! Quick Find implementations
+
 use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
 
 /// [`QuickFind`] algorithm

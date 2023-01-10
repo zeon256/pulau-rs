@@ -76,6 +76,7 @@ pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
+/// Any type that can be used to index internal buffer
 pub trait VertexType: Eq + Copy {
     type IdentifierType: Copy + Eq + PartialOrd + AddAssign<Self::IdentifierType>;
 
@@ -180,12 +181,22 @@ where
     }
 }
 
+/// This trait represents the kind of containers that is required for a particular algorithm to function
 pub trait AlgorithmContainer {
+    /// Any kind of contiguous container
+    /// 
+    /// # Example
+    /// - `[T; N]`, `[T; 0]`, `Vec<T, N>`
     type HeuristicContainer<'a, const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
 
+    /// Any kind of contiguous container (should not be ZST). `R` must also live as long as `'a`
+    /// 
+    /// # Example
+    /// - `[T; N]`, [`heapless::Vec<T, N>`]
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
+/// Union operation
 pub trait Union<T>
 where
     T: VertexType,
@@ -198,6 +209,7 @@ where
     );
 }
 
+/// Find operation
 pub trait Find<T>
 where
     T: VertexType,
@@ -205,6 +217,7 @@ where
     fn find(representative: &mut [T], a: T::IdentifierType) -> T;
 }
 
+/// Connected operation
 pub trait Connected<T>
 where
     T: VertexType,
