@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ByRank","Link by rank of tree"],["BySize","Link by size of tree"],["QuickUnion","[`QuickUnion`] algorithm"],["Unweighted","No heuristic linking"]],"trait":[["Heuristic","Heuristic for quick union algorithm"]]};
