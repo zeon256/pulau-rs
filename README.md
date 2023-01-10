@@ -2,7 +2,7 @@
   <img src="./logo.png">
 </p>
 <p align="center">
-Allocation-free UnionFind library for bare metal environments
+allocation-free union-find library for bare metal environments
 </p>
 <p align="center">
   <a href="https://github.com/zeon256/pulau-rs/blob/main/LICENSE">
@@ -35,7 +35,6 @@ The library provides the following algorithms that is used with `UnionFind`.
 pulau-rs = "0.2.0"
 ```
 
-## Asymptotic Complexity
 ## Asymptotic Complexity
 | Algorithm                                        |           Struct            |  Init  |     Union |      Find | Connected |
 | :----------------------------------------------- | :-------------------------: | :----: | --------: | --------: | --------: |
