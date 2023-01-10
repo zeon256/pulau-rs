@@ -16,6 +16,8 @@ pub struct BySize<const IS_SLICE: bool = false>;
 #[derive(Default, Debug)]
 pub struct Unweighted<const IS_SLICE: bool = false>;
 
+/// Heuristic for quick union algorithm
+#[cfg(feature = "traits")]
 pub trait Heuristic {
     fn handle_decision<T>(
         a: T::IdentifierType,
