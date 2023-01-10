@@ -186,14 +186,17 @@ where
 pub trait AlgorithmContainer {
     /// Any kind of contiguous container
     /// 
-    /// # Example
-    /// - `[T; N]`, `[T; 0]`, `Vec<T, N>`
+    /// # Examples
+    /// - `[T; N]`
+    /// - `[T; 0]`
+    /// - `heapless::Vec<T, N>`
     type HeuristicContainer<'a, const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
 
     /// Any kind of contiguous container (should not be ZST). `R` must also live as long as `'a`
     /// 
-    /// # Example
-    /// - `[T; N]`, [`heapless::Vec<T, N>`]
+    /// # Examples
+    /// - `[T; N]`
+    /// - `heaples::Vec<T, N>`
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize>: AsRef<[R]> + AsMut<[R]>;
 }
 
