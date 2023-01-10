@@ -39,11 +39,11 @@ pulau-rs = "0.2.0"
 ## Asymptotic Complexity
 | Algorithm                                        |           Struct            |  Init  |     Union |      Find | Connected |
 | :----------------------------------------------- | :-------------------------: | :----: | --------: | --------: | --------: |
-| QuickFind                                        |         [QuickFind]         | `O(N)` |    `O(N)` |    `O(1)` |    `O(1)` |
-| QuickUnion                                       | [QuickUnion<false, false>]  | `O(N)` |    `O(N)` |    `O(N)` |    `O(N)` |
-| Weighted QuickUnion                              | [QuickUnion<ByRank, false>] | `O(N)` | `O(lg N)` | `O(lg N)` | `O(lg N)` |
-| Weighted (Rank) QuickUnion With Path Compression | [QuickUnion<ByRank, true>]  | `O(N)` | `Θ(α(N))` | `Θ(α(N))` | `Θ(α(N))` |
-| Weighted (Size) QuickUnion With Path Compression | [QuickUnion<BySize, true>]  | `O(N)` | `Θ(α(N))` | `Θ(α(N))` | `Θ(α(N))` |
+| QuickFind                                        |         `QuickFind`         | `O(N)` |    `O(N)` |    `O(1)` |    `O(1)` |
+| QuickUnion                                       | `QuickUnion<false, false>`  | `O(N)` |    `O(N)` |    `O(N)` |    `O(N)` |
+| Weighted QuickUnion                              | `QuickUnion<ByRank, false>` | `O(N)` | `O(lg N)` | `O(lg N)` | `O(lg N)` |
+| Weighted (Rank) QuickUnion With Path Compression | `QuickUnion<ByRank, true>`  | `O(N)` | `Θ(α(N))` | `Θ(α(N))` | `Θ(α(N))` |
+| Weighted (Size) QuickUnion With Path Compression | `QuickUnion<BySize, true>`  | `O(N)` | `Θ(α(N))` | `Θ(α(N))` | `Θ(α(N))` |
 
 *Where `α` is the inverse [Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function)
 
