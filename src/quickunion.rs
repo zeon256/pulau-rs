@@ -17,8 +17,6 @@ pub struct BySize<const IS_SLICE: bool = false>;
 pub struct Unweighted<const IS_SLICE: bool = false>;
 
 /// Heuristic for quick union algorithm
-#[cfg(feature = "traits")]
-#[cfg_attr(docsrs, doc(cfg(feature = "traits")))]
 pub trait Heuristic {
     fn handle_decision<T>(
         a: T::IdentifierType,
@@ -199,6 +197,9 @@ where
     T: VertexType,
 {
     pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize]) -> Self {
+        debug_assert!(representative.len() >= N, "Representative slice must have at least len >= N!");
+        debug_assert!(heuristic.len() >= N, "Heuristic slice must have at least len >= N!");
+
         Self {
             representative,
             heuristic,

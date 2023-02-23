@@ -14,9 +14,5 @@ keywords = ["dsu", "disjoint-set", "union-find", "no-std"]
 
 [dependencies]
 
-[features]
-traits = []
-default = ["traits"]
-
 [dev-dependencies]
 heapless = "0.7.16"

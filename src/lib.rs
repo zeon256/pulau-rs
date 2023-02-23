@@ -182,8 +182,6 @@ where
 }
 
 /// This trait represents the kind of containers that is required for a particular algorithm to function
-#[cfg(feature="traits")]
-#[cfg_attr(docsrs, doc(cfg(feature = "traits")))]
 pub trait AlgorithmContainer {
     /// Any kind of contiguous container
     /// 
@@ -202,8 +200,6 @@ pub trait AlgorithmContainer {
 }
 
 /// Union operation
-#[cfg(feature="traits")]
-#[cfg_attr(docsrs, doc(cfg(feature = "traits")))]
 pub trait Union<T>
 where
     T: VertexType,
@@ -217,8 +213,6 @@ where
 }
 
 /// Find operation
-#[cfg(feature="traits")]
-#[cfg_attr(docsrs, doc(cfg(feature = "traits")))]
 pub trait Find<T>
 where
     T: VertexType,
@@ -227,8 +221,6 @@ where
 }
 
 /// Connected operation
-#[cfg(feature="traits")]
-#[cfg_attr(docsrs, doc(cfg(feature = "traits")))]
 pub trait Connected<T>
 where
     T: VertexType,
