@@ -2,19 +2,25 @@
 
 use core::marker::PhantomData;
 
-use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
+use crate::{AlgorithmContainer, Borrowed, Connected, Find, Owned, Union, UnionFind, VertexType};
 
 /// Link by rank of tree
 #[derive(Default, Debug)]
-pub struct ByRank<const IS_SLICE: bool = false>;
+pub struct ByRank<K = Owned> {
+    _p: PhantomData<K>,
+}
 
 /// Link by size of tree
 #[derive(Default, Debug)]
-pub struct BySize<const IS_SLICE: bool = false>;
+pub struct BySize<K = Owned> {
+    _p: PhantomData<K>,
+}
 
 /// No heuristic linking
 #[derive(Default, Debug)]
-pub struct Unweighted<const IS_SLICE: bool = false>;
+pub struct Unweighted<K = Owned> {
+    _p: PhantomData<K>,
+}
 
 /// Heuristic for quick union algorithm
 pub trait Heuristic {
@@ -27,7 +33,7 @@ pub trait Heuristic {
         T: VertexType;
 }
 
-impl<const IS_SLICE: bool> Heuristic for Unweighted<IS_SLICE> {
+impl<K> Heuristic for Unweighted<K> {
     #[inline(always)]
     fn handle_decision<T>(
         a: T::IdentifierType,
@@ -45,7 +51,7 @@ impl<const IS_SLICE: bool> Heuristic for Unweighted<IS_SLICE> {
     }
 }
 
-impl<const IS_SLICE: bool> Heuristic for ByRank<IS_SLICE> {
+impl<K> Heuristic for ByRank<K> {
     #[inline(always)]
     fn handle_decision<T>(
         mut a: T::IdentifierType,
@@ -67,7 +73,7 @@ impl<const IS_SLICE: bool> Heuristic for ByRank<IS_SLICE> {
     }
 }
 
-impl<const IS_SLICE: bool> Heuristic for BySize<IS_SLICE> {
+impl<K> Heuristic for BySize<K> {
     #[inline(always)]
     fn handle_decision<T>(
         mut a: T::IdentifierType,
@@ -114,17 +120,19 @@ impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted, PA
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
 }
 
-impl<const PATH_COMPRESS: bool> AlgorithmContainer for QuickUnion<Unweighted<true>, PATH_COMPRESS> {
+impl<const PATH_COMPRESS: bool> AlgorithmContainer
+    for QuickUnion<Unweighted<Borrowed>, PATH_COMPRESS>
+{
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
 }
 
-impl AlgorithmContainer for QuickUnion<BySize<true>> {
+impl AlgorithmContainer for QuickUnion<BySize<Borrowed>> {
     type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
 }
 
-impl AlgorithmContainer for QuickUnion<ByRank<true>> {
+impl AlgorithmContainer for QuickUnion<ByRank<Borrowed>> {
     type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
 }
@@ -179,7 +187,7 @@ macro_rules! generate_default_ctor {
     };
 }
 
-impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<BySize<true>>, T, N>
+impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<BySize<Borrowed>>, T, N>
 where
     T: VertexType,
 {
@@ -192,13 +200,19 @@ where
     }
 }
 
-impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<ByRank<true>>, T, N>
+impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<ByRank<Borrowed>>, T, N>
 where
     T: VertexType,
 {
     pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize]) -> Self {
-        debug_assert!(representative.len() >= N, "Representative slice must have at least len >= N!");
-        debug_assert!(heuristic.len() >= N, "Heuristic slice must have at least len >= N!");
+        debug_assert!(
+            representative.len() >= N,
+            "Representative slice must have at least len >= N!"
+        );
+        debug_assert!(
+            heuristic.len() >= N,
+            "Heuristic slice must have at least len >= N!"
+        );
 
         Self {
             representative,
@@ -209,7 +223,7 @@ where
 }
 
 impl<'a, T, const N: usize, const PATH_COMPRESS: bool>
-    UnionFind<'a, QuickUnion<Unweighted<true>, PATH_COMPRESS>, T, N>
+    UnionFind<'a, QuickUnion<Unweighted<Borrowed>, PATH_COMPRESS>, T, N>
 where
     T: VertexType,
 {
@@ -272,7 +286,9 @@ generate_default_ctor!(u8, u16, u32, u64, usize);
 #[cfg(test)]
 mod tests {
     use super::{BySize, Heuristic, Unweighted};
-    use crate::{tests::CityVertex, AlgorithmContainer, ByRank, QuickUnion, UnionFind, VertexType};
+    use crate::{
+        tests::CityVertex, AlgorithmContainer, Borrowed, ByRank, QuickUnion, UnionFind, VertexType,
+    };
     use core::mem;
 
     #[test]
@@ -372,7 +388,8 @@ mod tests {
         );
         assert_eq!(
             mem::size_of::<&'_ [CityVertex<'_>]>() + mem::size_of::<&'_ [usize]>(),
-            mem::size_of::<UnionFind::<'_, QuickUnion<BySize<true>, true>, CityVertex<'_>, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize<Borrowed>, true>, CityVertex<'_>, 10>>(
+            )
         );
     }
 
@@ -444,7 +461,7 @@ mod tests {
         ) where
             T: VertexType,
         {
-            ByRank::<false>::handle_decision(a, b, heuristic, representative)
+            ByRank::<Borrowed>::handle_decision(a, b, heuristic, representative)
         }
     }
 
@@ -475,8 +492,10 @@ mod tests {
         let mut representative = (0..12).collect::<heapless::Vec<u8, 12>>();
         let mut heuristic = heapless::Vec::<usize, 12>::from_slice(&[0; 12]).unwrap();
 
-        let mut uf =
-            UnionFind::<QuickUnion<ByRank<true>>, u8, 12>::new(&mut representative, &mut heuristic);
+        let mut uf = UnionFind::<QuickUnion<ByRank<Borrowed>>, u8, 12>::new(
+            &mut representative,
+            &mut heuristic,
+        );
 
         uf.union_sets(1, 2);
         uf.union_sets(2, 3);
@@ -501,8 +520,10 @@ mod tests {
         let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
         let mut heuristic = heapless::Vec::<usize, 10>::from_slice(&[1; 10]).unwrap();
 
-        let mut uf =
-            UnionFind::<QuickUnion<BySize<true>>, u8, 10>::new(&mut representative, &mut heuristic);
+        let mut uf = UnionFind::<QuickUnion<BySize<Borrowed>>, u8, 10>::new(
+            &mut representative,
+            &mut heuristic,
+        );
 
         uf.union_sets(1, 2);
         uf.union_sets(2, 3);

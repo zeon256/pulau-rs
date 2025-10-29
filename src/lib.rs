@@ -76,6 +76,9 @@ pub use crate::quickfind::QuickFind;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
+pub struct Owned;
+pub struct Borrowed;
+
 /// Any type that can be used to index internal buffer
 pub trait VertexType: Eq + Copy {
     type IdentifierType: Copy + Eq + PartialOrd + AddAssign<Self::IdentifierType>;
@@ -136,7 +139,7 @@ generate_index_type_impl!(u8, u16, u32, u64, usize);
 /// If it's weighted then, size of [`UnionFind`] is `T * N + size_of(usize) * N`
 ///
 /// Else it will be `T * N`
-/// 
+///
 /// If you are using borrowed buffers, then the size will be the `core::mem::size_of::<usize>() * 2`
 /// if it's weighted, else it will just be `core::mem::size_of::<usize>()`
 pub struct UnionFind<'a, A, T, const N: usize>
@@ -184,7 +187,7 @@ where
 /// This trait represents the kind of containers that is required for a particular algorithm to function
 pub trait AlgorithmContainer {
     /// Any kind of contiguous container
-    /// 
+    ///
     /// # Examples
     /// - `[T; N]`
     /// - `[T; 0]`
@@ -192,7 +195,7 @@ pub trait AlgorithmContainer {
     type HeuristicContainer<'a, const N: usize>: AsRef<[usize]> + AsMut<[usize]>;
 
     /// Any kind of contiguous container (should not be ZST). `R` must also live as long as `'a`
-    /// 
+    ///
     /// # Examples
     /// - `[T; N]`
     /// - `heaples::Vec<T, N>`
