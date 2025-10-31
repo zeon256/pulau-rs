@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 use rand::RngCore;
 
 use crate::{
-    rng::PhantomRng, AlgorithmContainer, Borrowed, Connected, Find, Owned, Union, UnionFind,
+    rng::PhantomRng, AlgorithmContainer, Borrowed, Connected, Find, Owned, Thin, Union, UnionFind,
     VertexType,
 };
 
@@ -165,7 +165,6 @@ impl AlgorithmContainer for QuickUnion<BySize> {
     type HeuristicKind<'a> = BySize;
     type HeuristicContainer<'a, const N: usize> = [usize; N];
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-
     type RngKind<'a> = PhantomRng;
 }
 
@@ -183,10 +182,24 @@ impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed>, P> {
     type RngKind<'a> = PhantomRng;
 }
 
+impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed<Thin>>, P> {
+    type HeuristicKind<'a> = Unweighted<Borrowed<Thin>>;
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
+    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
+    type RngKind<'a> = PhantomRng;
+}
+
 impl AlgorithmContainer for QuickUnion<BySize<Borrowed>> {
     type HeuristicKind<'a> = BySize<Borrowed>;
     type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
+    type RngKind<'a> = PhantomRng;
+}
+
+impl AlgorithmContainer for QuickUnion<BySize<Borrowed<Thin>>> {
+    type HeuristicKind<'a> = BySize<Borrowed<Thin>>;
+    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
+    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
     type RngKind<'a> = PhantomRng;
 }
 
@@ -197,10 +210,24 @@ impl AlgorithmContainer for QuickUnion<ByRank<Borrowed>> {
     type RngKind<'a> = PhantomRng;
 }
 
+impl AlgorithmContainer for QuickUnion<ByRank<Borrowed<Thin>>> {
+    type HeuristicKind<'a> = ByRank<Borrowed<Thin>>;
+    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
+    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
+    type RngKind<'a> = PhantomRng;
+}
+
 impl<R: RngCore + AsMut<R>> AlgorithmContainer for QuickUnion<ByRandom<R>> {
     type HeuristicKind<'a> = ByRandom<R>;
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
+    type RngKind<'a> = R;
+}
+
+impl<R: RngCore + AsMut<R>> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed>> {
+    type HeuristicKind<'a> = ByRandom<R, Borrowed>;
+    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
+    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
     type RngKind<'a> = R;
 }
 
@@ -354,261 +381,402 @@ impl<H, V: VertexType, const COMPRESS_PATH: bool> Find<V> for QuickUnion<H, COMP
 
 generate_default_ctor!(u8, u16, u32, u64, usize);
 
-// #[cfg(test)]
-// mod tests {
-//     use super::{BySize, Heuristic, Unweighted};
-//     use crate::{
-//         quickunion::PhantomRng, tests::CityVertex, AlgorithmContainer, Borrowed, ByRank,
-//         QuickUnion, UnionFind, VertexType,
-//     };
-//     use core::mem;
+#[cfg(test)]
+mod tests {
+    use super::{BySize, Heuristic, Unweighted};
+    use crate::{
+        quickunion::PhantomRng, tests::CityVertex, AlgorithmContainer, Borrowed, ByRank,
+        QuickUnion, Thin, UnionFind, VertexType,
+    };
+    use core::mem;
 
-//     #[test]
-//     fn test_qu() {
-//         let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
-//         uf.union_sets(4, 3);
-//         uf.union_sets(3, 8);
-//         uf.union_sets(6, 5);
-//         uf.union_sets(9, 4);
-//         assert!(uf.connected(3, 9));
-//     }
+    #[test]
+    fn test_qu() {
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        assert!(uf.connected(3, 9));
+    }
 
-//     #[test]
-//     fn test_getter_qu() {
-//         let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
-//         uf.union_sets(4, 3);
-//         uf.union_sets(3, 8);
-//         uf.union_sets(6, 5);
-//         uf.union_sets(9, 4);
-//         for _ in uf.heuristic() {
-//             panic!("Should not even loop!");
-//         }
-//     }
+    #[test]
+    fn test_getter_qu() {
+        let mut uf = UnionFind::<QuickUnion<Unweighted, false>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        for _ in uf.heuristic() {
+            panic!("Should not even loop!");
+        }
+    }
 
-//     #[test]
-//     fn test_qu_mem() {
-//         assert_eq!(
-//             mem::size_of::<[u32; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, u32, 10>>()
-//         );
-//         assert_eq!(
-//             mem::size_of::<[CityVertex<'_>; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, CityVertex<'_>, 10>>()
-//         );
-//     }
+    #[test]
+    fn test_qu_mem_owned_u32() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, u32, 10>>()
+        );
+    }
 
-//     #[test]
-//     fn test_qupc() {
-//         let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
-//         uf.union_sets(4, 3);
-//         uf.union_sets(3, 8);
-//         uf.union_sets(6, 5);
-//         uf.union_sets(9, 4);
-//         assert!(uf.connected(3, 9));
-//     }
+    #[test]
+    fn test_qu_mem_owned_city_vertex() {
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, false>, CityVertex<'_>, 10>>()
+        );
+    }
 
-//     #[test]
-//     fn test_getter_qupc() {
-//         let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
-//         uf.union_sets(4, 3);
-//         uf.union_sets(3, 8);
-//         uf.union_sets(6, 5);
-//         uf.union_sets(9, 4);
-//         for _ in uf.heuristic() {
-//             panic!("Should not even loop!");
-//         }
-//     }
+    #[test]
+    fn test_qu_mem_borrowed_u32() {
+        assert_eq!(
+            mem::size_of::<&[u32]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted<Borrowed>, false>, u32, 10>>()
+        );
+    }
 
-//     #[test]
-//     fn test_qupc_mem() {
-//         assert_eq!(
-//             mem::size_of::<[u32; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, u32, 10>>()
-//         );
-//         assert_eq!(
-//             mem::size_of::<[CityVertex<'_>; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, CityVertex<'_>, 10>>()
-//         );
-//     }
+    #[test]
+    fn test_qu_mem_borrowed_city_vertex() {
+        assert_eq!(
+            mem::size_of::<&[CityVertex<'_>]>(),
+            mem::size_of::<
+                UnionFind::<'_, QuickUnion<Unweighted<Borrowed>, false>, CityVertex<'_>, 10>,
+            >()
+        );
+    }
 
-//     #[test]
-//     fn test_wqupc_sz() {
-//         let mut uf = UnionFind::<QuickUnion<BySize>, u8, 10>::default();
-//         uf.union_sets(1, 2);
-//         uf.union_sets(2, 3);
-//         uf.union_sets(3, 4);
-//         assert_eq!([1, 4, 1, 1, 1, 1, 1, 1, 1, 1], uf.heuristic);
-//         uf.union_sets(5, 6);
-//         uf.union_sets(6, 7);
-//         uf.union_sets(7, 8);
-//         uf.union_sets(8, 9);
-//         assert_eq!([1, 4, 1, 1, 1, 5, 1, 1, 1, 1], uf.heuristic);
-//         assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
-//         uf.union_sets(4, 5);
-//         assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
-//     }
+    #[test]
+    fn test_qu_mem_borrowed_thin_u32() {
+        // HeuristicContainer is [usize; 0] (zero-sized), so only the representative pointer counts
+        assert_eq!(
+            mem::size_of::<&[u32; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted<Borrowed<Thin>>, false>, u32, 10>>(
+            )
+        );
+    }
 
-//     #[test]
-//     fn test_wqupc_mem() {
-//         assert_eq!(
-//             mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<BySize>, u32, 10>>()
-//         );
-//         assert_eq!(
-//             mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
-//         );
-//         assert_eq!(
-//             mem::size_of::<&'_ [CityVertex<'_>]>() + mem::size_of::<&'_ [usize]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion<BySize<Borrowed>, true>, CityVertex<'_>, 10>>(
-//             )
-//         );
-//     }
+    #[test]
+    fn test_qu_mem_borrowed_thin_city_vertex() {
+        // HeuristicContainer is [usize; 0] (zero-sized), so only the representative pointer counts
+        assert_eq!(
+            mem::size_of::<&[CityVertex<'_>; 10]>(),
+            mem::size_of::<
+                UnionFind::<'_, QuickUnion<Unweighted<Borrowed<Thin>>, false>, CityVertex<'_>, 10>,
+            >()
+        );
+    }
 
-//     #[test]
-//     fn test_wqupc_rank() {
-//         let mut uf = UnionFind::<QuickUnion, u8, 12>::default();
-//         uf.union_sets(1, 2);
-//         uf.union_sets(2, 3);
-//         uf.union_sets(3, 4);
-//         assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(5, 6);
-//         uf.union_sets(6, 7);
-//         uf.union_sets(7, 8);
-//         uf.union_sets(8, 9);
-//         assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
-//         uf.union_sets(4, 5);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(4, 11);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//     }
+    #[test]
+    fn test_qupc() {
+        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        assert!(uf.connected(3, 9));
+    }
 
-//     #[test]
-//     fn test_wqupc_rank_mem() {
-//         assert_eq!(
-//             mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion, u32, 10>>()
-//         );
-//         assert_eq!(
-//             mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
-//             mem::size_of::<UnionFind::<'_, QuickUnion, CityVertex<'_>, 10>>()
-//         );
-//     }
+    #[test]
+    fn test_getter_qupc() {
+        let mut uf = UnionFind::<QuickUnion<Unweighted, true>, u8, 10>::default();
+        uf.union_sets(4, 3);
+        uf.union_sets(3, 8);
+        uf.union_sets(6, 5);
+        uf.union_sets(9, 4);
+        for _ in uf.heuristic() {
+            panic!("Should not even loop!");
+        }
+    }
 
-//     struct ByRankVec;
+    #[test]
+    fn test_qupc_mem_owned_u32() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, u32, 10>>()
+        );
+    }
 
-//     impl AlgorithmContainer for QuickUnion<ByRankVec> {
-//         type HeuristicContainer<'a, const N: usize> = heapless::Vec<usize, N>;
-//         type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = heapless::Vec<R, N>;
-//         type RngKind = PhantomRng;
-//     }
+    #[test]
+    fn test_qupc_mem_owned_city_vertex() {
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<Unweighted, true>, CityVertex<'_>, 10>>()
+        );
+    }
 
-//     impl<const N: usize> UnionFind<'_, QuickUnion<ByRankVec>, u8, N> {
-//         pub fn new() -> Self {
-//             let mut representative = heapless::Vec::<_, N>::new();
-//             let _ = representative.resize(N, 0);
+    #[test]
+    fn test_wqupc_sz() {
+        let mut uf = UnionFind::<QuickUnion<BySize>, u8, 10>::default();
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([1, 4, 1, 1, 1, 1, 1, 1, 1, 1], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([1, 4, 1, 1, 1, 5, 1, 1, 1, 1], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
+    }
 
-//             for i in 0..(N as u8) {
-//                 representative[i as usize] = i;
-//             }
+    #[test]
+    fn test_wqupc_sz_mem_owned_u32() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize>, u32, 10>>()
+        );
+    }
 
-//             let heuristic = heapless::Vec::<usize, N>::from_slice(&[0; N]).unwrap();
+    #[test]
+    fn test_wqupc_sz_mem_borrowed_u32() {
+        assert_eq!(
+            mem::size_of::<&[u32]>() + mem::size_of::<&[usize]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize<Borrowed>>, u32, 10>>()
+        );
+    }
 
-//             Self {
-//                 representative,
-//                 heuristic,
-//                 algorithm: Default::default(),
-//             }
-//         }
-//     }
+    #[test]
+    fn test_wqupc_sz_mem_owned_city_vertex() {
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize, true>, CityVertex<'_>, 10>>()
+        );
+    }
 
-//     impl Heuristic for ByRankVec {
-//         fn handle_decision<T>(
-//             a: T::IdentifierType,
-//             b: T::IdentifierType,
-//             heuristic: &mut [usize],
-//             representative: &mut [T],
-//         ) where
-//             T: VertexType,
-//         {
-//             ByRank::<Borrowed>::handle_decision(a, b, heuristic, representative)
-//         }
-//     }
+    #[test]
+    fn test_wqupc_sz_mem_borrowed_city_vertex() {
+        assert_eq!(
+            mem::size_of::<&'_ [CityVertex<'_>]>() + mem::size_of::<&'_ [usize]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<BySize<Borrowed>, true>, CityVertex<'_>, 10>>(
+            )
+        );
+    }
 
-//     #[test]
-//     fn test_vec_heapless() {
-//         let mut uf = UnionFind::<QuickUnion<ByRankVec>, u8, 12>::new();
+    #[test]
+    fn test_wqupc_rank() {
+        let mut uf = UnionFind::<QuickUnion, u8, 12>::default();
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(4, 11);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
 
-//         uf.union_sets(1, 2);
-//         uf.union_sets(2, 3);
-//         uf.union_sets(3, 4);
-//         assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(5, 6);
-//         uf.union_sets(6, 7);
-//         uf.union_sets(7, 8);
-//         uf.union_sets(8, 9);
-//         assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
-//         uf.union_sets(4, 5);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(4, 11);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//     }
+    #[test]
+    fn test_wqupc_rank_mem_owned_u32() {
+        assert_eq!(
+            mem::size_of::<[u32; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion, u32, 10>>()
+        );
+    }
 
-//     #[test]
-//     fn test_slice() {
-//         let mut representative = (0..12).collect::<heapless::Vec<u8, 12>>();
-//         let mut heuristic = heapless::Vec::<usize, 12>::from_slice(&[0; 12]).unwrap();
+    #[test]
+    fn test_wqupc_rank_mem_borrowed_u32() {
+        assert_eq!(
+            mem::size_of::<&[u32]>() + mem::size_of::<&[usize]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<ByRank<Borrowed>>, u32, 10>>()
+        );
+    }
 
-//         let mut uf = UnionFind::<QuickUnion<ByRank<Borrowed>>, u8, 12>::new(
-//             &mut representative,
-//             &mut heuristic,
-//         );
+    #[test]
+    fn test_wqupc_rank_mem_owned_city_vertex() {
+        assert_eq!(
+            mem::size_of::<[CityVertex<'_>; 10]>() + mem::size_of::<[usize; 10]>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion, CityVertex<'_>, 10>>()
+        );
+    }
 
-//         uf.union_sets(1, 2);
-//         uf.union_sets(2, 3);
-//         uf.union_sets(3, 4);
-//         assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(5, 6);
-//         uf.union_sets(6, 7);
-//         uf.union_sets(7, 8);
-//         uf.union_sets(8, 9);
-//         assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
-//         uf.union_sets(4, 5);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//         uf.union_sets(4, 11);
-//         assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
-//         assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
-//     }
+    struct ByRankHeaplessVec;
 
-//     #[test]
-//     fn test_slice_by_size() {
-//         let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
-//         let mut heuristic = heapless::Vec::<usize, 10>::from_slice(&[1; 10]).unwrap();
+    impl AlgorithmContainer for QuickUnion<ByRankHeaplessVec> {
+        type HeuristicKind<'a> = ByRankHeaplessVec;
+        type HeuristicContainer<'a, const N: usize> = heapless::Vec<usize, N>;
+        type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = heapless::Vec<R, N>;
+        type RngKind<'a> = PhantomRng;
+    }
 
-//         let mut uf = UnionFind::<QuickUnion<BySize<Borrowed>>, u8, 10>::new(
-//             &mut representative,
-//             &mut heuristic,
-//         );
+    impl<const N: usize> UnionFind<'_, QuickUnion<ByRankHeaplessVec>, u8, N> {
+        pub fn new() -> Self {
+            let mut representative = heapless::Vec::<_, N>::new();
+            let _ = representative.resize(N, 0);
 
-//         uf.union_sets(1, 2);
-//         uf.union_sets(2, 3);
-//         uf.union_sets(3, 4);
-//         assert_eq!([1, 4, 1, 1, 1, 1, 1, 1, 1, 1], uf.heuristic);
-//         uf.union_sets(5, 6);
-//         uf.union_sets(6, 7);
-//         uf.union_sets(7, 8);
-//         uf.union_sets(8, 9);
-//         assert_eq!([1, 4, 1, 1, 1, 5, 1, 1, 1, 1], uf.heuristic);
-//         assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
-//         uf.union_sets(4, 5);
-//         assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
-//     }
-// }
+            for i in 0..(N as u8) {
+                representative[i as usize] = i;
+            }
+
+            let heuristic = heapless::Vec::<usize, N>::from_slice(&[0; N]).unwrap();
+
+            Self {
+                representative,
+                heuristic,
+                algorithm: Default::default(),
+                rng: PhantomRng,
+            }
+        }
+    }
+
+    impl Heuristic for ByRankHeaplessVec {
+        type RngProvider = PhantomRng;
+
+        #[inline(always)]
+        fn handle_decision<T>(
+            mut a: T::IdentifierType,
+            mut b: T::IdentifierType,
+            rank: &mut [usize],
+            representative: &mut [T],
+            _r: &mut Self::RngProvider,
+        ) where
+            T: VertexType,
+        {
+            if a != b {
+                if rank[T::usize(a)] < rank[T::usize(b)] {
+                    core::mem::swap(&mut a, &mut b);
+                }
+                representative[T::usize(b)] = representative[T::usize(a)];
+                if rank[T::usize(a)] == rank[T::usize(b)] {
+                    rank[T::usize(a)] += 1;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_wqupc_rank_mem_heapless_vec_u8() {
+        assert_eq!(
+            mem::size_of::<heapless::Vec<u8, 12>>() + mem::size_of::<heapless::Vec<usize, 12>>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<ByRankHeaplessVec>, u8, 12>>()
+        );
+    }
+
+    #[test]
+    fn test_wqupc_rank_mem_heapless_vec_city_vertex() {
+        assert_eq!(
+            mem::size_of::<heapless::Vec<CityVertex<'_>, 10>>()
+                + mem::size_of::<heapless::Vec<usize, 10>>(),
+            mem::size_of::<UnionFind::<'_, QuickUnion<ByRankHeaplessVec>, CityVertex<'_>, 10>>()
+        );
+    }
+
+    #[test]
+    fn test_vec_heapless() {
+        let mut uf = UnionFind::<QuickUnion<ByRankHeaplessVec>, u8, 12>::new();
+
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(4, 11);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
+
+    #[test]
+    fn test_vec_heapless_borrowed() {
+        const N: usize = 12;
+        let mut representative = heapless::Vec::<_, N>::new();
+        let _ = representative.resize(N, 0);
+
+        for i in 0..(N as u8) {
+            representative[i as usize] = i;
+        }
+
+        let mut heuristic = heapless::Vec::<usize, N>::from_slice(&[0; N]).unwrap();
+
+        let mut uf = UnionFind::<QuickUnion<ByRank<Borrowed>>, u8, 12>::new(
+            &mut representative,
+            &mut heuristic,
+        );
+
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(4, 11);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
+
+    #[test]
+    fn test_slice() {
+        let mut representative = (0..12).collect::<heapless::Vec<u8, 12>>();
+        let mut heuristic = heapless::Vec::<usize, 12>::from_slice(&[0; 12]).unwrap();
+
+        let mut uf = UnionFind::<QuickUnion<ByRank<Borrowed>>, u8, 12>::new(
+            &mut representative,
+            &mut heuristic,
+        );
+
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5, 10, 11], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 11], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+        uf.union_sets(4, 11);
+        assert_eq!([0, 1, 1, 1, 1, 1, 5, 5, 5, 5, 10, 1], uf.representative);
+        assert_eq!([0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], uf.heuristic);
+    }
+
+    #[test]
+    fn test_slice_by_size() {
+        let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
+        let mut heuristic = heapless::Vec::<usize, 10>::from_slice(&[1; 10]).unwrap();
+
+        let mut uf = UnionFind::<QuickUnion<BySize<Borrowed>>, u8, 10>::new(
+            &mut representative,
+            &mut heuristic,
+        );
+
+        uf.union_sets(1, 2);
+        uf.union_sets(2, 3);
+        uf.union_sets(3, 4);
+        assert_eq!([1, 4, 1, 1, 1, 1, 1, 1, 1, 1], uf.heuristic);
+        uf.union_sets(5, 6);
+        uf.union_sets(6, 7);
+        uf.union_sets(7, 8);
+        uf.union_sets(8, 9);
+        assert_eq!([1, 4, 1, 1, 1, 5, 1, 1, 1, 1], uf.heuristic);
+        assert_eq!([0, 1, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
+        uf.union_sets(4, 5);
+        assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
+    }
+}

@@ -80,8 +80,12 @@ use crate::quickunion::Heuristic;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
+// slice pointer types
+pub struct Fat;
+pub struct Thin;
+
 pub struct Owned;
-pub struct Borrowed;
+pub struct Borrowed<T = Fat>(PhantomData<T>);
 
 /// Any type that can be used to index internal buffer
 pub trait VertexType: Eq + Copy {
