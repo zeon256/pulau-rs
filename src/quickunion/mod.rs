@@ -1,36 +1,14 @@
-//! Quick Union implementation
-
+use crate::{Owned, VertexType};
 use core::marker::PhantomData;
+use rand_core::RngCore;
 
-use rand::RngCore;
+pub mod heuristics;
+pub mod algorithm_container;
+pub mod constructors;
+pub mod borrowed_impls;
+pub mod traits_impl;
 
-use crate::{
-    rng::PhantomRng, AlgorithmContainer, Borrowed, Connected, Find, Owned, Thin, Union, UnionFind,
-    VertexType,
-};
-
-/// Link by rank of tree
-#[derive(Default, Debug)]
-pub struct ByRank<K = Owned> {
-    _p: PhantomData<K>,
-}
-
-/// Link by size of tree
-#[derive(Default, Debug)]
-pub struct BySize<K = Owned> {
-    _p: PhantomData<K>,
-}
-
-/// Link by random
-pub struct ByRandom<R: RngCore, K = Owned> {
-    _p: PhantomData<(R, K)>,
-}
-
-/// No heuristic linking
-#[derive(Default, Debug)]
-pub struct Unweighted<K = Owned> {
-    _p: PhantomData<K>,
-}
+pub use heuristics::{ByRank, BySize, Unweighted};
 
 /// Heuristic for quick union algorithm
 pub trait Heuristic {
@@ -46,102 +24,6 @@ pub trait Heuristic {
         T: VertexType;
 }
 
-impl<K> Heuristic for Unweighted<K> {
-    type RngProvider = PhantomRng;
-
-    #[inline(always)]
-    fn handle_decision<T>(
-        a: T::IdentifierType,
-        b: T::IdentifierType,
-        _heuristic: &mut [usize],
-        representative: &mut [T],
-        _r: &mut Self::RngProvider,
-    ) where
-        T: VertexType,
-    {
-        if a == b {
-            return;
-        }
-
-        representative[T::usize(a)] = representative[T::usize(b)];
-    }
-}
-
-impl<K> Heuristic for ByRank<K> {
-    type RngProvider = PhantomRng;
-
-    #[inline(always)]
-    fn handle_decision<T>(
-        mut a: T::IdentifierType,
-        mut b: T::IdentifierType,
-        rank: &mut [usize],
-        representative: &mut [T],
-        _r: &mut Self::RngProvider,
-    ) where
-        T: VertexType,
-    {
-        if a != b {
-            if rank[T::usize(a)] < rank[T::usize(b)] {
-                core::mem::swap(&mut a, &mut b);
-            }
-            representative[T::usize(b)] = representative[T::usize(a)];
-            if rank[T::usize(a)] == rank[T::usize(b)] {
-                rank[T::usize(a)] += 1;
-            }
-        }
-    }
-}
-
-impl<K> Heuristic for BySize<K> {
-    type RngProvider = PhantomRng;
-
-    #[inline(always)]
-    fn handle_decision<T>(
-        mut a: T::IdentifierType,
-        mut b: T::IdentifierType,
-        size: &mut [usize],
-        representative: &mut [T],
-        _r: &mut Self::RngProvider,
-    ) where
-        T: VertexType,
-    {
-        if a != b {
-            if size[T::usize(a)] < size[T::usize(b)] {
-                core::mem::swap(&mut a, &mut b);
-            }
-            representative[T::usize(b)] = representative[T::usize(a)];
-            size[T::usize(a)] += size[T::usize(b)];
-        }
-    }
-}
-
-impl<R: RngCore + AsMut<R>, K> Heuristic for ByRandom<R, K> {
-    type RngProvider = R;
-
-    #[inline]
-    fn handle_decision<T>(
-        a: T::IdentifierType,
-        b: T::IdentifierType,
-        _heuristic: &mut [usize],
-        representative: &mut [T],
-        rng: &mut Self::RngProvider,
-    ) where
-        T: VertexType,
-    {
-        if a == b {
-            return;
-        }
-
-        let root_a = T::usize(a);
-        let root_b = T::usize(b);
-        if rng.next_u32() % 2 == 0 {
-            representative[root_a] = representative[root_b];
-        } else {
-            representative[root_b] = representative[root_a];
-        }
-    }
-}
-
 /// [`QuickUnion`] algorithm
 ///
 /// This algorithm is parameterized by the following
@@ -150,243 +32,15 @@ impl<R: RngCore + AsMut<R>, K> Heuristic for ByRandom<R, K> {
 ///
 /// By default, [`ByRank`] heuristic is used and path compression is enabled
 #[derive(Debug, Default)]
-pub struct QuickUnion<H = ByRank, const COMPRESS_PATH: bool = true> {
+pub struct QuickUnion<H = ByRank<Owned>, const COMPRESS_PATH: bool = true> {
     heuristic: PhantomData<H>,
 }
-
-impl AlgorithmContainer for QuickUnion<ByRank> {
-    type HeuristicKind<'a> = ByRank;
-    type HeuristicContainer<'a, const N: usize> = [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl AlgorithmContainer for QuickUnion<BySize> {
-    type HeuristicKind<'a> = BySize;
-    type HeuristicContainer<'a, const N: usize> = [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted, P> {
-    type HeuristicKind<'a> = Unweighted;
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed>, P> {
-    type HeuristicKind<'a> = Unweighted<Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed<Thin>>, P> {
-    type HeuristicKind<'a> = Unweighted<Borrowed<Thin>>;
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl AlgorithmContainer for QuickUnion<BySize<Borrowed>> {
-    type HeuristicKind<'a> = BySize<Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl AlgorithmContainer for QuickUnion<BySize<Borrowed<Thin>>> {
-    type HeuristicKind<'a> = BySize<Borrowed<Thin>>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl AlgorithmContainer for QuickUnion<ByRank<Borrowed>> {
-    type HeuristicKind<'a> = ByRank<Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl AlgorithmContainer for QuickUnion<ByRank<Borrowed<Thin>>> {
-    type HeuristicKind<'a> = ByRank<Borrowed<Thin>>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<R: RngCore + AsMut<R>> AlgorithmContainer for QuickUnion<ByRandom<R>> {
-    type HeuristicKind<'a> = ByRandom<R>;
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = R;
-}
-
-impl<R: RngCore + AsMut<R>> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed>> {
-    type HeuristicKind<'a> = ByRandom<R, Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = R;
-}
-
-macro_rules! generate_representative {
-    ($n:expr, $num_type:ident) => {{
-        let mut representative = [0; $n];
-        for i in 0..($n as $num_type) {
-            representative[i as usize] = i;
-        }
-        representative
-    }};
-}
-
-/// Macro to generate default constructor for weighted quickunion (by rank) with path compression
-macro_rules! generate_default_ctor {
-    ($($num_type:ident), *) => {
-        $(
-        impl<const N: usize> Default for UnionFind<'_, QuickUnion, $num_type, N>
-        {
-            fn default() -> Self {
-                Self {
-                    representative: generate_representative!(N, $num_type),
-                    heuristic: [0; N],
-                    algorithm: Default::default(),
-                    rng: PhantomRng
-                }
-            }
-        }
-
-        impl<const N: usize> Default for UnionFind<'_, QuickUnion<BySize>, $num_type, N>
-        {
-            fn default() -> Self {
-                Self {
-                    representative: generate_representative!(N, $num_type),
-                    heuristic: [1; N],
-                    algorithm: Default::default(),
-                    rng: PhantomRng
-                }
-            }
-        }
-
-        impl<const N: usize, const PATH_COMPRESS: bool> Default for UnionFind<'_, QuickUnion<Unweighted, PATH_COMPRESS>, $num_type, N>
-        {
-            fn default() -> Self {
-                Self {
-                    representative: generate_representative!(N, $num_type),
-                    heuristic: [0; 0],
-                    algorithm: Default::default(),
-                    rng: PhantomRng
-                }
-            }
-        }
-        )*
-    };
-}
-
-impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<BySize<Borrowed>>, T, N>
-where
-    T: VertexType,
-{
-    pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize]) -> Self {
-        Self {
-            representative,
-            heuristic,
-            algorithm: Default::default(),
-            rng: PhantomRng,
-        }
-    }
-}
-
-impl<'a, T, const N: usize> UnionFind<'a, QuickUnion<ByRank<Borrowed>>, T, N>
-where
-    T: VertexType,
-{
-    pub fn new(representative: &'a mut [T], heuristic: &'a mut [usize]) -> Self {
-        debug_assert!(
-            representative.len() >= N,
-            "Representative slice must have at least len >= N!"
-        );
-        debug_assert!(
-            heuristic.len() >= N,
-            "Heuristic slice must have at least len >= N!"
-        );
-
-        Self {
-            representative,
-            heuristic,
-            algorithm: Default::default(),
-            rng: PhantomRng,
-        }
-    }
-}
-
-impl<'a, T, const N: usize, const PATH_COMPRESS: bool>
-    UnionFind<'a, QuickUnion<Unweighted<Borrowed>, PATH_COMPRESS>, T, N>
-where
-    T: VertexType,
-{
-    pub fn new(representative: &'a mut [T]) -> Self {
-        Self {
-            representative,
-            heuristic: [0; 0],
-            algorithm: Default::default(),
-            rng: PhantomRng,
-        }
-    }
-}
-
-impl<H, T, const PATH_COMPRESS: bool> Connected<T> for QuickUnion<H, PATH_COMPRESS>
-where
-    T: VertexType,
-    Self: Find<T>,
-{
-    fn connected(representative: &mut [T], a: T::IdentifierType, b: T::IdentifierType) -> bool {
-        Self::find(representative, a) == Self::find(representative, b)
-    }
-}
-
-impl<H, T, const COMPRESS_PATH: bool> Union<T, H> for QuickUnion<H, COMPRESS_PATH>
-where
-    T: VertexType,
-    H: Heuristic,
-    Self: Find<T>,
-{
-    fn union_sets<'a>(
-        representative: &mut [T],
-        heuristic: &mut [usize],
-        mut a: T::IdentifierType,
-        mut b: T::IdentifierType,
-        r: &mut H::RngProvider,
-    ) {
-        a = Self::find(representative, a).id();
-        b = Self::find(representative, b).id();
-        H::handle_decision(a, b, heuristic, representative, r)
-    }
-}
-
-impl<H, V: VertexType, const COMPRESS_PATH: bool> Find<V> for QuickUnion<H, COMPRESS_PATH> {
-    fn find(representative: &mut [V], mut a: V::IdentifierType) -> V {
-        while a != representative[V::usize(a)].id() {
-            // path compression
-            if COMPRESS_PATH {
-                representative[V::usize(a)] =
-                    representative[V::usize(representative[V::usize(a)].id()).id()];
-            }
-            a = representative[V::usize(a)].id()
-        }
-        representative[V::usize(a)]
-    }
-}
-
-generate_default_ctor!(u8, u16, u32, u64, usize);
 
 #[cfg(test)]
 mod tests {
     use super::{BySize, Heuristic, Unweighted};
     use crate::{
-        quickunion::PhantomRng, tests::CityVertex, AlgorithmContainer, Borrowed, ByRank,
-        QuickUnion, Thin, UnionFind, VertexType,
+        AlgorithmContainer, Borrowed, ByRank, QuickUnion, Thin, UnionFind, VertexType, rng::PhantomRng, tests::CityVertex
     };
     use core::mem;
 
@@ -779,4 +433,156 @@ mod tests {
         uf.union_sets(4, 5);
         assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
     }
+
+    // Tests for ByRandom heuristic
+    // #[cfg(test)]
+    // mod by_random_tests {
+    //     use super::*;
+    //     use crate::quickunion::ByRandom;
+    //     use rand::{RngCore, SeedableRng};
+    //     use rand_hc::Hc128Rng;
+
+    //     impl
+
+    //     #[test]
+    //     fn test_by_random_basic() {
+    //         // Use a seeded RNG for deterministic tests
+    //         let rng = Hc128Rng::seed_from_u64(42);
+    //         let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng);
+
+    //         uf.union_sets(1, 2);
+    //         uf.union_sets(3, 4);
+    //         uf.union_sets(5, 6);
+
+    //         // These should be connected
+    //         assert!(uf.connected(1, 2));
+    //         assert!(uf.connected(3, 4));
+    //         assert!(uf.connected(5, 6));
+
+    //         // These should not be connected
+    //         assert!(!uf.connected(1, 3));
+    //         assert!(!uf.connected(2, 5));
+    //     }
+
+    // #[test]
+    // fn test_by_random_deterministic() {
+    //     // With the same seed, we should get the same results
+    //     let rng1 = Hc128Rng::seed_from_u64(12345);
+    //     let mut uf1 = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng1);
+
+    //     let rng2 = Hc128Rng::seed_from_u64(12345);
+    //     let mut uf2 = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng2);
+
+    //     // Perform same operations
+    //     for i in 0..4 {
+    //         uf1.union_sets(i, i + 1);
+    //         uf2.union_sets(i, i + 1);
+    //     }
+
+    //     // Both should have the same representative array
+    //     assert_eq!(uf1.representative, uf2.representative);
+    // }
+
+    // #[test]
+    // fn test_by_random_large_tree() {
+    //     let rng = Hc128Rng::seed_from_u64(999);
+    //     let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 20>::new(rng);
+
+    //     // Build a large connected component
+    //     for i in 0..19 {
+    //         uf.union_sets(i, i + 1);
+    //     }
+
+    //     // All elements should be in the same component
+    //     for i in 0..19 {
+    //         assert!(uf.connected(0, i));
+    //     }
+    // }
+
+    // #[test]
+    // fn test_by_random_multiple_components() {
+    //     let rng = Hc128Rng::seed_from_u64(777);
+    //     let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 12>::new(rng);
+
+    //     // Create component 1: {0, 1, 2, 3}
+    //     uf.union_sets(0, 1);
+    //     uf.union_sets(1, 2);
+    //     uf.union_sets(2, 3);
+
+    //     // Create component 2: {4, 5, 6}
+    //     uf.union_sets(4, 5);
+    //     uf.union_sets(5, 6);
+
+    //     // Create component 3: {7, 8, 9}
+    //     uf.union_sets(7, 8);
+    //     uf.union_sets(8, 9);
+
+    //     // Verify components
+    //     assert!(uf.connected(0, 3));
+    //     assert!(uf.connected(4, 6));
+    //     assert!(uf.connected(7, 9));
+
+    //     // Verify separation
+    //     assert!(!uf.connected(0, 4));
+    //     assert!(!uf.connected(4, 7));
+    //     assert!(!uf.connected(0, 7));
+    // }
+
+    // #[test]
+    // fn test_by_random_union_same_element() {
+    //     let rng = Hc128Rng::seed_from_u64(555);
+    //     let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng);
+
+    //     // Union an element with itself should be a no-op
+    //     uf.union_sets(5, 5);
+    //     assert_eq!(5, uf.find_set(5));
+    // }
+
+    // #[test]
+    // fn test_by_random_borrowed() {
+    //     let rng = Hc128Rng::seed_from_u64(42);
+    //     let mut representative = (0..10).collect::<heapless::Vec<u8, 10>>();
+    //     let mut heuristic = heapless::Vec::<usize, 10>::from_slice(&[0; 10]).unwrap();
+
+    //     let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng, Borrowed>>, u8, 10>::new_with_rng(
+    //         &mut representative,
+    //         &mut heuristic,
+    //         rng,
+    //     );
+
+    //     uf.union_sets(1, 2);
+    //     uf.union_sets(3, 4);
+    //     uf.union_sets(5, 6);
+
+    //     assert!(uf.connected(1, 2));
+    //     assert!(uf.connected(3, 4));
+    //     assert!(uf.connected(5, 6));
+    //     assert!(!uf.connected(1, 3));
+    // }
+
+    // #[test]
+    // fn test_by_random_different_seeds() {
+    //     // Different seeds should potentially produce different tree structures
+    //     let rng1 = Hc128Rng::seed_from_u64(111);
+    //     let mut uf1 = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng1);
+
+    //     let rng2 = Hc128Rng::seed_from_u64(222);
+    //     let mut uf2 = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng2);
+
+    //     // Perform same operations
+    //     for i in 0..5 {
+    //         uf1.union_sets(i, i + 1);
+    //         uf2.union_sets(i, i + 1);
+    //     }
+
+    //     // Both should have same connectivity
+    //     for i in 0..5 {
+    //         assert!(uf1.connected(0, i));
+    //         assert!(uf2.connected(0, i));
+    //     }
+
+    //     // But potentially different tree structures (representative arrays may differ)
+    //     // This is expected behavior with random linking
+    // }
+    // }
 }

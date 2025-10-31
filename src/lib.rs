@@ -73,7 +73,7 @@ pub mod rng;
 use core::marker::PhantomData;
 use core::ops::AddAssign;
 
-use rand::RngCore;
+use rand_core::RngCore;
 
 pub use crate::quickfind::QuickFind;
 use crate::quickunion::Heuristic;
@@ -187,7 +187,11 @@ where
             self.rng.as_mut(),
         )
     }
-    /// Gets the representative slice pub fn representative(&self) -> &A::RepresentativeContainer<'a, T, N> { &self.representative }
+    /// Gets the representative slice
+    pub fn representative(&self) -> &A::RepresentativeContainer<'a, T, N> {
+        &self.representative
+    }
+
     /// Gets the heuristic slice
     pub fn heuristic(&self) -> &A::HeuristicContainer<'a, N> {
         &self.heuristic

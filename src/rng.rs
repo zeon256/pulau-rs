@@ -1,4 +1,4 @@
-use rand::RngCore;
+use rand_core::RngCore;
 
 /// Zero-sized marker type for RNG-less heuristics
 #[derive(Default, Debug)]
@@ -22,10 +22,4 @@ impl RngCore for PhantomRng {
     fn fill_bytes(&mut self, _dst: &mut [u8]) {
         unreachable!("Should not be called!")
     }
-}
-
-pub trait RngProvider {
-    type R: RngCore;
-
-    fn get_mut(&mut self) -> &mut Self::R;
 }
