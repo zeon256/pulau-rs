@@ -10,6 +10,12 @@ impl AsMut<Self> for PhantomRng {
     }
 }
 
+impl AsRef<Self> for PhantomRng {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
 impl RngCore for PhantomRng {
     fn next_u32(&mut self) -> u32 {
         unreachable!("Should not be called!")

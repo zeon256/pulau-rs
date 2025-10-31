@@ -70,6 +70,7 @@ pub mod quickfind;
 pub mod quickunion;
 pub mod rng;
 
+use core::borrow::{Borrow, BorrowMut};
 use core::marker::PhantomData;
 use core::ops::AddAssign;
 
@@ -184,7 +185,7 @@ where
             self.heuristic.as_mut(),
             a,
             b,
-            self.rng.as_mut(),
+            &mut self.rng,
         )
     }
     /// Gets the representative slice
@@ -218,7 +219,7 @@ pub trait AlgorithmContainer {
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize>: AsRef<[V]> + AsMut<[V]>;
 
     /// Any kind of RNG
-    type RngKind<'a>: RngCore + AsMut<Self::RngKind<'a>>;
+    type RngKind<'a>: RngCore;
 }
 
 /// Union operation

@@ -2,17 +2,17 @@ use crate::{Owned, VertexType};
 use core::marker::PhantomData;
 use rand_core::RngCore;
 
-pub mod heuristics;
 pub mod algorithm_container;
-pub mod constructors;
 pub mod borrowed_impls;
+pub mod constructors;
+pub mod heuristics;
 pub mod traits_impl;
 
-pub use heuristics::{ByRank, BySize, Unweighted};
+pub use heuristics::{ByRandom, ByRank, BySize, Unweighted};
 
 /// Heuristic for quick union algorithm
 pub trait Heuristic {
-    type RngProvider: RngCore + AsMut<Self::RngProvider>;
+    type RngProvider: RngCore;
 
     fn handle_decision<T>(
         a: T::IdentifierType,
@@ -36,11 +36,106 @@ pub struct QuickUnion<H = ByRank<Owned>, const COMPRESS_PATH: bool = true> {
     heuristic: PhantomData<H>,
 }
 
+// Tests for ByRandom heuristic
+#[cfg(test)]
+mod by_random_tests {
+    use crate::{quickunion::heuristics::ByRandom, UnionFind};
+
+    use super::*;
+
+    use rand_core::SeedableRng;
+    use rand_hc::Hc128Rng;
+
+    #[cfg(test)]
+    mod size_tests {
+        use core::mem;
+
+        use rand_core::SeedableRng;
+        use rand_hc::Hc128Rng;
+
+        use crate::{Borrowed, Fat, Owned, QuickUnion, Thin, UnionFind, quickunion::ByRandom};
+
+        #[test]
+        fn test_one_union() {
+            // Use a seeded RNG for deterministic tests
+            let rng = Hc128Rng::seed_from_u64(67);
+            let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng, Owned>>, u8, 2>::new(rng);
+
+            uf.union_sets(0, 1);
+
+            assert!(uf.connected(0, 1));
+        }
+
+        #[test]
+        fn test_size() {
+            const N: usize = 128;
+            assert_eq!(
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, N>>(),
+                mem::size_of::<[u8; N]>()
+                    + mem::size_of::<[usize; 0]>()
+                    + mem::size_of::<Hc128Rng>()
+            );
+        }
+
+        #[test]
+        fn test_size_padded() {
+            const M: usize = 100;
+
+            assert_eq!(
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, M>>(),
+                mem::size_of::<[u8; M]>()
+                    + mem::size_of::<[usize; 0]>()
+                    + mem::size_of::<Hc128Rng>()
+                    + 4 // padding
+            );
+        }
+
+        #[test]
+        fn test_size_borrowed_thin() {
+            const N: usize = 128;
+            assert_eq!(
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Thin>>, false>, u8, N>>(),
+                mem::size_of::<&[u8; N]>() + mem::size_of::<Hc128Rng>()
+            );
+        }
+
+        #[test]
+        fn test_size_borrowed_fat() {
+            const N: usize = 128;
+            assert_eq!(
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Fat>>, false>, u8, N>>(),
+                mem::size_of::<&[u8]>() + mem::size_of::<Hc128Rng>()
+            );
+        }
+    }
+
+    #[test]
+    fn test_by_random_basic() {
+        // Use a seeded RNG for deterministic tests
+        let rng = Hc128Rng::seed_from_u64(67);
+        let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng);
+
+        uf.union_sets(0, 1);
+        uf.union_sets(2, 3);
+        uf.union_sets(4, 5);
+
+        // These should be connected
+        assert!(uf.connected(0, 1));
+        assert!(uf.connected(2, 3));
+        assert!(uf.connected(4, 5));
+
+        // These should not be connected
+        assert!(!uf.connected(1, 2));
+        assert!(!uf.connected(2, 5));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{BySize, Heuristic, Unweighted};
     use crate::{
-        AlgorithmContainer, Borrowed, ByRank, QuickUnion, Thin, UnionFind, VertexType, rng::PhantomRng, tests::CityVertex
+        rng::PhantomRng, tests::CityVertex, AlgorithmContainer, Borrowed, ByRank, QuickUnion, Thin,
+        UnionFind, VertexType,
     };
     use core::mem;
 
@@ -433,37 +528,6 @@ mod tests {
         uf.union_sets(4, 5);
         assert_eq!([0, 5, 1, 1, 1, 5, 5, 5, 5, 5], uf.representative);
     }
-
-    // Tests for ByRandom heuristic
-    // #[cfg(test)]
-    // mod by_random_tests {
-    //     use super::*;
-    //     use crate::quickunion::ByRandom;
-    //     use rand::{RngCore, SeedableRng};
-    //     use rand_hc::Hc128Rng;
-
-    //     impl
-
-    //     #[test]
-    //     fn test_by_random_basic() {
-    //         // Use a seeded RNG for deterministic tests
-    //         let rng = Hc128Rng::seed_from_u64(42);
-    //         let mut uf = UnionFind::<QuickUnion<ByRandom<Hc128Rng>>, u8, 10>::new(rng);
-
-    //         uf.union_sets(1, 2);
-    //         uf.union_sets(3, 4);
-    //         uf.union_sets(5, 6);
-
-    //         // These should be connected
-    //         assert!(uf.connected(1, 2));
-    //         assert!(uf.connected(3, 4));
-    //         assert!(uf.connected(5, 6));
-
-    //         // These should not be connected
-    //         assert!(!uf.connected(1, 3));
-    //         assert!(!uf.connected(2, 5));
-    //     }
-
     // #[test]
     // fn test_by_random_deterministic() {
     //     // With the same seed, we should get the same results

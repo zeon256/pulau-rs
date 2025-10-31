@@ -1,6 +1,6 @@
 //! Trait implementations for QuickUnion: Connected, Union, Find
 
-use crate::{VertexType, Connected, Union, Find};
+use crate::{Connected, Find, Union, VertexType, quickunion::Heuristic};
 use super::QuickUnion;
 
 impl<H, T, const PATH_COMPRESS: bool> Connected<T> for QuickUnion<H, PATH_COMPRESS>
@@ -16,7 +16,7 @@ where
 impl<H, T, const COMPRESS_PATH: bool> Union<T, H> for QuickUnion<H, COMPRESS_PATH>
 where
     T: VertexType,
-    H: super::Heuristic,
+    H: Heuristic,
     Self: Find<T>,
 {
     fn union_sets<'a>(

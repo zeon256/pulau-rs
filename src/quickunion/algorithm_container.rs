@@ -47,7 +47,7 @@ macro_rules! impl_random {
     () => {
         impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R>, P>
         where
-            R: RngCore + AsMut<R>,
+            R: RngCore,
         {
             type HeuristicKind<'a> = ByRandom<R>;
             type HeuristicContainer<'a, const N: usize> = [usize; 0];
@@ -57,7 +57,7 @@ macro_rules! impl_random {
 
         impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed<Fat>>, P>
         where
-            R: RngCore + AsMut<R>,
+            R: RngCore,
         {
             type HeuristicKind<'a> = ByRandom<R, Borrowed<Fat>>;
             type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
@@ -67,7 +67,7 @@ macro_rules! impl_random {
 
         impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed<Thin>>, P>
         where
-            R: RngCore + AsMut<R>,
+            R: RngCore,
         {
             type HeuristicKind<'a> = ByRandom<R, Borrowed<Thin>>;
             type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
