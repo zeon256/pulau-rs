@@ -1,8 +1,10 @@
 //! ByRank heuristic for QuickUnion
 
+use core::marker::PhantomData;
+
 use crate::{Owned, VertexType, quickunion::Heuristic, rng::PhantomRng};
 
-pub struct ByRank<K = Owned>(core::marker::PhantomData<K>);
+pub struct ByRank<K = Owned>(PhantomData<K>);
 
 impl<K> Heuristic for ByRank<K> {
     type RngProvider = PhantomRng;

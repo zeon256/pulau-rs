@@ -1,9 +1,11 @@
 //! ByRandom heuristic for QuickUnion
 
-use rand_core::RngCore;
-use crate::{Owned, VertexType, quickunion::Heuristic};
+use core::marker::PhantomData;
 
-pub struct ByRandom<R, K = Owned>(core::marker::PhantomData<(R, K)>);
+use crate::{quickunion::Heuristic, Owned, VertexType};
+use rand_core::RngCore;
+
+pub struct ByRandom<R: RngCore + AsMut<R>, K = Owned>(PhantomData<(R, K)>);
 
 impl<R: RngCore + AsMut<R>, K> Heuristic for ByRandom<R, K> {
     type RngProvider = R;

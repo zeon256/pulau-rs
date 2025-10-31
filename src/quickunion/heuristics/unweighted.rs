@@ -1,8 +1,10 @@
 //! Unweighted heuristic for QuickUnion
 
-use crate::{Owned, VertexType, quickunion::Heuristic, rng::PhantomRng};
+use core::marker::PhantomData;
 
-pub struct Unweighted<K = Owned>(core::marker::PhantomData<K>);
+use crate::{quickunion::Heuristic, rng::PhantomRng, Owned, VertexType};
+
+pub struct Unweighted<K = Owned>(PhantomData<K>);
 
 impl<K> Heuristic for Unweighted<K> {
     type RngProvider = PhantomRng;

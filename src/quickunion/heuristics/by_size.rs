@@ -1,8 +1,10 @@
 //! BySize heuristic for QuickUnion
 
+use core::marker::PhantomData;
+
 use crate::{Owned, VertexType, quickunion::Heuristic, rng::PhantomRng};
 
-pub struct BySize<K = Owned>(core::marker::PhantomData<K>);
+pub struct BySize<K = Owned>(PhantomData<K>);
 
 impl<K> Heuristic for BySize<K> {
     type RngProvider = PhantomRng;

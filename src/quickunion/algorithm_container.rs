@@ -2,31 +2,90 @@
 
 use rand_core::RngCore;
 
-use crate::{AlgorithmContainer, Borrowed, ByRank, BySize, QuickUnion, Thin, Unweighted, VertexType, quickunion::heuristics::ByRandom, rng::PhantomRng};
+use crate::{
+    quickunion::heuristics::ByRandom, rng::PhantomRng, AlgorithmContainer, Borrowed, ByRank,
+    BySize, Fat, Owned, QuickUnion, Thin, Unweighted, VertexType,
+};
 
-impl AlgorithmContainer for QuickUnion<ByRank> {
-    type HeuristicKind<'a> = ByRank;
-    type HeuristicContainer<'a, const N: usize> = [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = PhantomRng;
+/// Implements AlgorithmContainer for QuickUnion with `Owned` heuristics.
+macro_rules! impl_owned {
+    ($($heur:ident),* $(,)?) => {
+        $(
+            impl AlgorithmContainer for QuickUnion<$heur<Owned>> {
+                type HeuristicKind<'a> = $heur;
+                type HeuristicContainer<'a, const N: usize> = [usize; N];
+                type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
+                type RngKind<'a> = PhantomRng;
+            }
+        )*
+    };
 }
 
-impl AlgorithmContainer for QuickUnion<BySize> {
-    type HeuristicKind<'a> = BySize;
-    type HeuristicContainer<'a, const N: usize> = [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = PhantomRng;
+/// Implements AlgorithmContainer for QuickUnion with Borrowed<Fat|Thin> heuristics.
+macro_rules! impl_borrowed {
+    ($($heur:ident),* $(,)?) => {
+        $(
+            impl<const P: bool> AlgorithmContainer for QuickUnion<$heur<Borrowed<Fat>>, P> {
+                type HeuristicKind<'a> = $heur<Borrowed<Fat>>;
+                type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
+                type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
+                type RngKind<'a> = PhantomRng;
+            }
+
+            impl<const P: bool> AlgorithmContainer for QuickUnion<$heur<Borrowed<Thin>>, P> {
+                type HeuristicKind<'a> = $heur<Borrowed<Thin>>;
+                type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
+                type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
+                type RngKind<'a> = PhantomRng;
+            }
+        )*
+    };
 }
 
-impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted, P> {
+/// Implements AlgorithmContainer for QuickUnion with ByRandom<R> and borrowed variants.
+macro_rules! impl_random {
+    () => {
+        impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R>, P>
+        where
+            R: RngCore + AsMut<R>,
+        {
+            type HeuristicKind<'a> = ByRandom<R>;
+            type HeuristicContainer<'a, const N: usize> = [usize; 0];
+            type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
+            type RngKind<'a> = R;
+        }
+
+        impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed<Fat>>, P>
+        where
+            R: RngCore + AsMut<R>,
+        {
+            type HeuristicKind<'a> = ByRandom<R, Borrowed<Fat>>;
+            type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
+            type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
+            type RngKind<'a> = R;
+        }
+
+        impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed<Thin>>, P>
+        where
+            R: RngCore + AsMut<R>,
+        {
+            type HeuristicKind<'a> = ByRandom<R, Borrowed<Thin>>;
+            type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
+            type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
+            type RngKind<'a> = R;
+        }
+    };
+}
+
+impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Owned>, P> {
     type HeuristicKind<'a> = Unweighted;
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
     type RngKind<'a> = PhantomRng;
 }
 
-impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed>, P> {
-    type HeuristicKind<'a> = Unweighted<Borrowed>;
+impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed<Fat>>, P> {
+    type HeuristicKind<'a> = Unweighted<Borrowed<Fat>>;
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
     type RngKind<'a> = PhantomRng;
@@ -39,50 +98,6 @@ impl<const P: bool> AlgorithmContainer for QuickUnion<Unweighted<Borrowed<Thin>>
     type RngKind<'a> = PhantomRng;
 }
 
-impl<const P: bool> AlgorithmContainer for QuickUnion<BySize<Borrowed>, P> {
-    type HeuristicKind<'a> = BySize<Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<BySize<Borrowed<Thin>>, P> {
-    type HeuristicKind<'a> = BySize<Borrowed<Thin>>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<ByRank<Borrowed>, P> {
-    type HeuristicKind<'a> = ByRank<Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<const P: bool> AlgorithmContainer for QuickUnion<ByRank<Borrowed<Thin>>, P> {
-    type HeuristicKind<'a> = ByRank<Borrowed<Thin>>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize; N];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V; N];
-    type RngKind<'a> = PhantomRng;
-}
-
-impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R>, P>
-where
-    R: RngCore + AsMut<R>,
-{
-    type HeuristicKind<'a> = ByRandom<R>;
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = [V; N];
-    type RngKind<'a> = R;
-}
-
-impl<R, const P: bool> AlgorithmContainer for QuickUnion<ByRandom<R, Borrowed>, P>
-where
-    R: RngCore + AsMut<R>,
-{
-    type HeuristicKind<'a> = ByRandom<R, Borrowed>;
-    type HeuristicContainer<'a, const N: usize> = &'a mut [usize];
-    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize> = &'a mut [V];
-    type RngKind<'a> = R;
-}
+impl_owned!(ByRank, BySize);
+impl_borrowed!(ByRank, BySize);
+impl_random!();
