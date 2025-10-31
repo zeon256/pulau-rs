@@ -1,19 +1,48 @@
 //! Quick Find implementations
 
-use crate::{AlgorithmContainer, Connected, Find, Union, UnionFind, VertexType};
+use core::marker::PhantomData;
+
+use crate::{
+    quickunion::Heuristic, rng::PhantomRng, AlgorithmContainer, Borrowed, Connected, Find, Owned,
+    Union, UnionFind, VertexType,
+};
 
 /// [`QuickFind`] algorithm
 #[derive(Debug, Default)]
-pub struct QuickFind<const IS_SLICE: bool = false>;
-
-impl AlgorithmContainer for QuickFind<false> {
-    type HeuristicContainer<'a, const N: usize> = [usize; 0];
-    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
+pub struct QuickFind<K = Owned> {
+    _p: PhantomData<K>,
 }
 
-impl AlgorithmContainer for QuickFind<true> {
+pub struct NoHeuristic;
+
+impl Heuristic for NoHeuristic {
+    type RngProvider = PhantomRng;
+
+    fn handle_decision<T>(
+        _a: T::IdentifierType,
+        _b: T::IdentifierType,
+        _heuristic: &mut [usize],
+        _representative: &mut [T],
+        _r: &mut Self::RngProvider,
+    ) where
+        T: VertexType,
+    {
+        unreachable!("Should not be called!")
+    }
+}
+
+impl AlgorithmContainer for QuickFind<Owned> {
+    type HeuristicKind<'a> = NoHeuristic;
+    type HeuristicContainer<'a, const N: usize> = [usize; 0];
+    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = [R; N];
+    type RngKind<'a> = PhantomRng;
+}
+
+impl AlgorithmContainer for QuickFind<Borrowed> {
+    type HeuristicKind<'a> = NoHeuristic;
     type HeuristicContainer<'a, const N: usize> = [usize; 0];
     type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize> = &'a mut [R];
+    type RngKind<'a> = PhantomRng;
 }
 
 macro_rules! generate_default_ctor_quickfind {
@@ -32,6 +61,7 @@ macro_rules! generate_default_ctor_quickfind {
                     representative,
                     heuristic: [0; 0],
                     algorithm: Default::default(),
+                    rng: PhantomRng
                 }
             }
         }
@@ -39,7 +69,7 @@ macro_rules! generate_default_ctor_quickfind {
     };
 }
 
-impl<'a, T, const N: usize> UnionFind<'a, QuickFind<true>, T, N>
+impl<'a, T, const N: usize> UnionFind<'a, QuickFind<Borrowed>, T, N>
 where
     T: VertexType,
 {
@@ -48,11 +78,12 @@ where
             representative,
             heuristic: [0; 0],
             algorithm: Default::default(),
+            rng: PhantomRng,
         }
     }
 }
 
-impl<T, const IS_SLICE: bool> Connected<T> for QuickFind<IS_SLICE>
+impl<T, K> Connected<T> for QuickFind<K>
 where
     T: VertexType,
     Self: Find<T>,
@@ -62,7 +93,7 @@ where
     }
 }
 
-impl<T, const IS_SLICE: bool> Union<T> for QuickFind<IS_SLICE>
+impl<T, K> Union<T, NoHeuristic> for QuickFind<K>
 where
     T: VertexType,
     Self: Find<T>,
@@ -72,6 +103,7 @@ where
         _heuristic: &mut [usize],
         a: T::IdentifierType,
         b: T::IdentifierType,
+        _r: &mut PhantomRng,
     ) {
         let root_a = Self::find(representative, a);
         let root_b = Self::find(representative, b);
@@ -83,7 +115,7 @@ where
     }
 }
 
-impl<T, const IS_SLICE: bool> Find<T> for QuickFind<IS_SLICE>
+impl<T, K> Find<T> for QuickFind<K>
 where
     T: VertexType,
 {
@@ -97,7 +129,7 @@ generate_default_ctor_quickfind!(u8, u16, u32, u64, usize);
 
 #[cfg(test)]
 mod tests {
-    use crate::{tests::CityVertex, QuickFind, UnionFind};
+    use crate::{rng::PhantomRng, tests::CityVertex, Borrowed, QuickFind, UnionFind};
     use core::{mem, panic};
 
     #[test]
@@ -113,7 +145,7 @@ mod tests {
     #[test]
     fn test_qf_slice() {
         let mut representative = (0..10).collect::<heapless::Vec<_, 10>>();
-        let mut uf = UnionFind::<QuickFind<true>, u32, 10>::new(representative.as_mut());
+        let mut uf = UnionFind::<QuickFind<Borrowed>, u32, 10>::new(representative.as_mut());
         uf.union_sets(4, 3);
         uf.union_sets(3, 8);
         uf.union_sets(6, 5);
@@ -137,6 +169,7 @@ mod tests {
                 representative: cities,
                 heuristic: [0; 0],
                 algorithm: Default::default(),
+                rng: PhantomRng,
             })
         }
     }
@@ -169,7 +202,7 @@ mod tests {
         );
         assert_eq!(
             mem::size_of::<&'_ [u32]>(),
-            mem::size_of::<UnionFind::<'_, QuickFind<true>, u32, 10>>()
+            mem::size_of::<UnionFind::<'_, QuickFind<Borrowed>, u32, 10>>()
         );
         assert_eq!(
             mem::size_of::<[CityVertex<'_>; 10]>(),

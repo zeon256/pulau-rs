@@ -68,11 +68,15 @@
 
 pub mod quickfind;
 pub mod quickunion;
+pub mod rng;
 
 use core::marker::PhantomData;
 use core::ops::AddAssign;
 
+use rand::RngCore;
+
 pub use crate::quickfind::QuickFind;
+use crate::quickunion::Heuristic;
 pub use crate::quickunion::QuickUnion;
 pub use crate::quickunion::{ByRank, BySize, Unweighted};
 
@@ -149,13 +153,14 @@ where
 {
     representative: A::RepresentativeContainer<'a, T, N>,
     heuristic: A::HeuristicContainer<'a, N>,
+    rng: A::RngKind<'a>,
     algorithm: PhantomData<A>,
 }
 
 impl<'a, A, T, const N: usize> UnionFind<'a, A, T, N>
 where
     T: VertexType,
-    A: AlgorithmContainer + Union<T> + Find<T> + Connected<T>,
+    A: AlgorithmContainer + Union<T, A::HeuristicKind<'a>> + Find<T> + Connected<T>,
 {
     /// Checks whether 2 nodes are connected to each other
     pub fn connected(&mut self, a: T::IdentifierType, b: T::IdentifierType) -> bool {
@@ -170,14 +175,15 @@ where
     /// Unions 2 node. If those 2 nodes are already part of the same component
     /// then this does nothing
     pub fn union_sets(&mut self, a: T::IdentifierType, b: T::IdentifierType) {
-        A::union_sets(self.representative.as_mut(), self.heuristic.as_mut(), a, b)
+        A::union_sets(
+            self.representative.as_mut(),
+            self.heuristic.as_mut(),
+            a,
+            b,
+            self.rng.as_mut(),
+        )
     }
-
-    /// Gets the representative slice
-    pub fn representative(&self) -> &A::RepresentativeContainer<'a, T, N> {
-        &self.representative
-    }
-
+    /// Gets the representative slice pub fn representative(&self) -> &A::RepresentativeContainer<'a, T, N> { &self.representative }
     /// Gets the heuristic slice
     pub fn heuristic(&self) -> &A::HeuristicContainer<'a, N> {
         &self.heuristic
@@ -186,6 +192,8 @@ where
 
 /// This trait represents the kind of containers that is required for a particular algorithm to function
 pub trait AlgorithmContainer {
+    type HeuristicKind<'a>: Heuristic<RngProvider = Self::RngKind<'a>>;
+
     /// Any kind of contiguous container
     ///
     /// # Examples
@@ -199,35 +207,30 @@ pub trait AlgorithmContainer {
     /// # Examples
     /// - `[T; N]`
     /// - `heaples::Vec<T, N>`
-    type RepresentativeContainer<'a, R: VertexType + 'a, const N: usize>: AsRef<[R]> + AsMut<[R]>;
+    type RepresentativeContainer<'a, V: VertexType + 'a, const N: usize>: AsRef<[V]> + AsMut<[V]>;
+
+    /// Any kind of RNG
+    type RngKind<'a>: RngCore + AsMut<Self::RngKind<'a>>;
 }
 
 /// Union operation
-pub trait Union<T>
-where
-    T: VertexType,
-{
+pub trait Union<T: VertexType, H: Heuristic> {
     fn union_sets(
         representative: &mut [T],
         heuristic: &mut [usize],
         a: T::IdentifierType,
         b: T::IdentifierType,
+        rng: &mut H::RngProvider,
     );
 }
 
 /// Find operation
-pub trait Find<T>
-where
-    T: VertexType,
-{
+pub trait Find<T: VertexType> {
     fn find(representative: &mut [T], a: T::IdentifierType) -> T;
 }
 
 /// Connected operation
-pub trait Connected<T>
-where
-    T: VertexType,
-{
+pub trait Connected<T: VertexType> {
     fn connected(representative: &mut [T], a: T::IdentifierType, b: T::IdentifierType) -> bool;
 }
 
