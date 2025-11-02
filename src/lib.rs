@@ -70,7 +70,6 @@ pub mod quickfind;
 pub mod quickunion;
 pub mod rng;
 
-use core::borrow::{Borrow, BorrowMut};
 use core::marker::PhantomData;
 use core::ops::AddAssign;
 
@@ -86,7 +85,11 @@ pub struct Fat;
 pub struct Thin;
 
 pub struct Owned;
-pub struct Borrowed<T = Fat>(PhantomData<T>);
+pub struct Borrowed<P: PointerType + ?Sized = Fat>(PhantomData<P>);
+
+pub trait PointerType {}
+impl PointerType for Fat {}
+impl PointerType for Thin {}
 
 /// Any type that can be used to index internal buffer
 pub trait VertexType: Eq + Copy {

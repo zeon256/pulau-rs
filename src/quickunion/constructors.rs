@@ -1,9 +1,10 @@
 //! Constructors and macros for QuickUnion
 
-use rand_core::RngCore;
 use crate::{
-    quickunion::heuristics::ByRandom, rng::PhantomRng, ByRank, BySize, QuickUnion, UnionFind, Unweighted, Owned
+    quickunion::heuristics::ByRandom, rng::PhantomRng, ByRank, BySize, Owned, QuickUnion,
+    UnionFind, Unweighted,
 };
+use rand_core::RngCore;
 
 /// Helper macro to generate the representative array
 macro_rules! generate_representative {

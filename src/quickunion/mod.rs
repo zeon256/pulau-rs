@@ -53,7 +53,7 @@ mod by_random_tests {
         use rand_core::SeedableRng;
         use rand_hc::Hc128Rng;
 
-        use crate::{Borrowed, Fat, Owned, QuickUnion, Thin, UnionFind, quickunion::ByRandom};
+        use crate::{quickunion::ByRandom, Borrowed, Fat, Owned, QuickUnion, Thin, UnionFind};
 
         #[test]
         fn test_one_union() {
@@ -70,7 +70,8 @@ mod by_random_tests {
         fn test_size() {
             const N: usize = 128;
             assert_eq!(
-                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, N>>(),
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, N>>(
+                ),
                 mem::size_of::<[u8; N]>()
                     + mem::size_of::<[usize; 0]>()
                     + mem::size_of::<Hc128Rng>()
@@ -78,11 +79,40 @@ mod by_random_tests {
         }
 
         #[test]
+        fn test_size_borrowed_rng() {
+            const N: usize = 128;
+            assert_eq!(
+                mem::size_of::<
+                    UnionFind::<'_, QuickUnion<ByRandom<&mut Hc128Rng, Owned>, false>, u8, N>,
+                >(),
+                mem::size_of::<[u8; N]>()
+                    + mem::size_of::<[usize; 0]>()
+                    + mem::size_of::<&Hc128Rng>()
+            );
+        }
+
+        #[test]
+        fn borrowed_rng_ctor() {
+            const N: usize = 10;
+            let mut rng = Hc128Rng::seed_from_u64(67);
+
+            let mut uf =
+                UnionFind::<'_, QuickUnion<ByRandom<&mut Hc128Rng, Owned>, false>, u8, N>::new(
+                    &mut rng,
+                );
+
+            uf.union_sets(0, 1);
+
+            assert!(uf.connected(0, 1));
+        }
+
+        #[test]
         fn test_size_padded() {
             const M: usize = 100;
 
             assert_eq!(
-                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, M>>(),
+                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Owned>, false>, u8, M>>(
+                ),
                 mem::size_of::<[u8; M]>()
                     + mem::size_of::<[usize; 0]>()
                     + mem::size_of::<Hc128Rng>()
@@ -94,7 +124,9 @@ mod by_random_tests {
         fn test_size_borrowed_thin() {
             const N: usize = 128;
             assert_eq!(
-                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Thin>>, false>, u8, N>>(),
+                mem::size_of::<
+                    UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Thin>>, false>, u8, N>,
+                >(),
                 mem::size_of::<&[u8; N]>() + mem::size_of::<Hc128Rng>()
             );
         }
@@ -103,7 +135,9 @@ mod by_random_tests {
         fn test_size_borrowed_fat() {
             const N: usize = 128;
             assert_eq!(
-                mem::size_of::<UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Fat>>, false>, u8, N>>(),
+                mem::size_of::<
+                    UnionFind::<'_, QuickUnion<ByRandom<Hc128Rng, Borrowed<Fat>>, false>, u8, N>,
+                >(),
                 mem::size_of::<&[u8]>() + mem::size_of::<Hc128Rng>()
             );
         }
