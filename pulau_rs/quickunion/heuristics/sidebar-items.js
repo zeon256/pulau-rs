@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["by_random","by_rank","by_size","unweighted"]};

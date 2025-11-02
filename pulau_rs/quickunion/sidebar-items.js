@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["algorithm_container","borrowed_impls","constructors","heuristics","traits_impl"],"struct":["QuickUnion"],"trait":["Heuristic"]};

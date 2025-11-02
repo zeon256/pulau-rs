@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["quickfind","quickunion","rng"],"struct":["Borrowed","Fat","Owned","Thin","UnionFind"],"trait":["AlgorithmContainer","Connected","Find","PointerType","Union","VertexType"]};
